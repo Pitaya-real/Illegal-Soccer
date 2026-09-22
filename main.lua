@@ -1,5 +1,5 @@
 -- =================================================================
--- SMART GK AUTO SAVE - MINIMALIST ESP & OPTIMIZED FOR MOBILE
+-- SMART GK AUTO SAVE - MULTI-TOUCH MOBILE CONTROLS & AUTO DEVICE DETECT
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -44,27 +45,58 @@ local lastBallTime = 0
 local ballVelocity = Vector3.zero
 
 -- ---------------------------------------------------------
--- 3. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
+-- 3. NHẬN DIỆN THIẾT BỊ (MOBILE VS PC)
+-- ---------------------------------------------------------
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+-- ---------------------------------------------------------
+-- 4. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
 -- ---------------------------------------------------------
 local Window = PitayaUI:CreateWindow({
-	Title = "Smart GK System | Minimal ESP",
+	Title = "Smart GK System | Multi-Touch Mobile",
 	Logo = "rbxassetid://73866843639743",
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v3.0</b> Clean UI"
+	LoadingTitle = "<b>Smart GK v3.5</b> Advanced Controls"
 })
 
 -- ---------------------------------------------------------
--- 4. TẠO CÁC NÚT ĐIỀU KHIỂN ẢO DÀNH CHO MOBILE
+-- 5. CHÈN UI VÀO COREGUI / PLAYERGUI (BYPASS)
 -- ---------------------------------------------------------
+local parentContainer
+if gethui then
+    parentContainer = gethui()
+elseif syn and syn.protect_gui then
+    parentContainer = Instance.new("Folder")
+    syn.protect_gui(parentContainer)
+    parentContainer.Parent = CoreGui
+else
+    local success, _ = pcall(function() local a = CoreGui.Name end)
+    if success then
+        parentContainer = CoreGui
+    else
+        parentContainer = LocalPlayer:WaitForChild("PlayerGui")
+    end
+end
+
 local MobileControlsGui = Instance.new("ScreenGui")
-MobileControlsGui.Name = "SmartGKMobileControls"
+MobileControlsGui.Name = "SmartGKMobileControls_Protect"
 MobileControlsGui.ResetOnSpawn = false
 MobileControlsGui.DisplayOrder = 9999
-MobileControlsGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+MobileControlsGui.Parent = parentContainer
 
-local function createActionButton(name, text, pos, size, bgColor, callback)
+-- Nếu là PC thì ẩn hẳn GUI điều khiển ảo
+if not isMobile then
+    MobileControlsGui.Enabled = false
+end
+
+-- ---------------------------------------------------------
+-- 6. TẠO CÁC NÚT ĐIỀU KHIỂN MULTI-TOUCH LINH HOẠT
+-- ---------------------------------------------------------
+local activeTouches = {}
+
+local function createMultiTouchButton(name, text, pos, size, bgColor, onPress, onRelease)
     local btn = Instance.new("TextButton")
     btn.Name = name
     btn.Size = size
@@ -89,78 +121,64 @@ local function createActionButton(name, text, pos, size, bgColor, callback)
     stroke.Transparency = 0.3
     stroke.Parent = btn
 
-    callback(btn)
+    local btnTouchObj = nil
+
+    btn.InputBegan:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) and not btnTouchObj then
+            btnTouchObj = input
+            if onPress then onPress(btn) end
+        end
+    end)
+
+    local function handleEnded(input)
+        if input == btnTouchObj or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            btnTouchObj = nil
+            if onRelease then onRelease(btn) end
+        end
+    end
+
+    btn.InputEnded:Connect(handleEnded)
+    UserInputService.InputEnded:Connect(function(input)
+        if input == btnTouchObj then handleEnded(input) end
+    end)
+
     return btn
 end
 
 -- Nút Shift (Chạy Nhanh)
-createActionButton("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(200, 100, 30), function(btn)
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isSprinting = not isSprinting
-            btn.BackgroundColor3 = isSprinting and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(200, 100, 30)
-            VirtualInputManager:SendKeyEvent(isSprinting, Enum.KeyCode.LeftShift, false, game)
-        end
-    end)
-end)
+createMultiTouchButton("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(200, 100, 30), 
+    function(btn)
+        isSprinting = not isSprinting
+        btn.BackgroundColor3 = isSprinting and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(200, 100, 30)
+        VirtualInputManager:SendKeyEvent(isSprinting, Enum.KeyCode.LeftShift, false, game)
+    end, nil
+)
 
 -- Nút Nhảy
-createActionButton("JumpBtn", "Nhảy", UDim2.new(0.85, 0, 0.65, 0), UDim2.new(0, 68, 0, 68), Color3.fromRGB(40, 40, 40), function(btn)
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-        end
-    end)
-    btn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-        end
-    end)
-end)
+createMultiTouchButton("JumpBtn", "Nhảy", UDim2.new(0.85, 0, 0.65, 0), UDim2.new(0, 68, 0, 68), Color3.fromRGB(40, 40, 40),
+    function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game) end,
+    function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end
+)
 
 -- Nút Bay người
-createActionButton("DiveBtn", "Bay người", UDim2.new(0.72, 0, 0.68, 0), UDim2.new(0, 64, 0, 64), Color3.fromRGB(30, 30, 30), function(btn)
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-        end
-    end)
-    btn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-        end
-    end)
-end)
+createMultiTouchButton("DiveBtn", "Bay người", UDim2.new(0.72, 0, 0.68, 0), UDim2.new(0, 64, 0, 64), Color3.fromRGB(30, 30, 30),
+    function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game) end,
+    function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game) end
+)
 
 -- Nút Sút
-createActionButton("ShootBtn", "Sút", UDim2.new(0.74, 0, 0.45, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30), function(btn)
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        end
-    end)
-    btn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-        end
-    end)
-end)
+createMultiTouchButton("ShootBtn", "Sút", UDim2.new(0.74, 0, 0.45, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30),
+    function() VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0) end,
+    function() VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0) end
+)
 
 -- Nút Chuyền
-createActionButton("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30), function(btn)
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0)
-        end
-    end)
-    btn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0)
-        end
-    end)
-end)
+createMultiTouchButton("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30),
+    function() VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0) end,
+    function() VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0) end
+)
 
--- Joystick Cần Gạt
+-- JOYSTICK LINH HOẠT KHÔNG LÀM KHỰNG TÁC VỤ KHÁC
 local TouchBase = Instance.new("TextButton")
 TouchBase.Name = "JoystickBase"
 TouchBase.Size = UDim2.new(0, 130, 0, 130)
@@ -196,25 +214,22 @@ ThumbCorner.CornerRadius = UDim.new(1, 0)
 ThumbCorner.Parent = Thumb
 
 local moveVector = Vector2.zero
-local dragging = false
-local touchInputObject = nil
+local joystickTouchObject = nil
 
 local function resetJoystick()
-    dragging = false
-    touchInputObject = nil
+    joystickTouchObject = nil
     moveVector = Vector2.zero
     Thumb.Position = UDim2.new(0.5, -25, 0.5, -25)
 end
 
 TouchBase.InputBegan:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) and not dragging then
-        dragging = true
-        touchInputObject = input
+    if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) and not joystickTouchObject then
+        joystickTouchObject = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input == touchInputObject or input.UserInputType == Enum.UserInputType.MouseMovement) then
+    if joystickTouchObject and (input == joystickTouchObject or input.UserInputType == Enum.UserInputType.MouseMovement) then
         local baseCenter = TouchBase.AbsolutePosition + (TouchBase.AbsoluteSize / 2)
         local inputPos = Vector2.new(input.Position.X, input.Position.Y)
         local delta = inputPos - baseCenter
@@ -230,13 +245,13 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input == touchInputObject or input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input == joystickTouchObject or input.UserInputType == Enum.UserInputType.MouseButton1 then
         resetJoystick()
     end
 end)
 
 -- ---------------------------------------------------------
--- 5. TAB TRÊN PITAYA UI
+-- 7. TAB TRÊN PITAYA UI
 -- ---------------------------------------------------------
 local GKTab = Window:CreateTab("Smart GK", "⚽")
 
@@ -305,10 +320,10 @@ ControlsTab:AddLabel("--- Phím Tắt Ảo Mobile ---", {BoldText = true})
 ControlsTab:AddToggle({
 	Text = "Hiển Thị Nút Điều Khiển Mobile",
 	BoldText = true,
-	Default = true,
+	Default = isMobile,
 	Callback = function(state)
 		mobileControlsEnabled = state
-		MobileControlsGui.Enabled = state
+		MobileControlsGui.Enabled = state and isMobile
 		if not state then resetJoystick() end
 	end
 })
@@ -323,13 +338,13 @@ ControlsTab:AddButton({
 })
 
 -- ---------------------------------------------------------
--- 6. TỰ ĐỘNG ẨN GIAO DIỆN GAME GỐC
+-- 8. TỰ ĐỘNG ẨN GIAO DIỆN GAME GỐC
 -- ---------------------------------------------------------
 task.spawn(function()
     local pGui = LocalPlayer:WaitForChild("PlayerGui")
     local function hideGameGuis()
         for _, gui in ipairs(pGui:GetChildren()) do
-            if gui:IsA("ScreenGui") and gui.Name ~= "PitayaUI" and gui.Name ~= "SmartGKMobileControls" then
+            if gui:IsA("ScreenGui") and not gui.Name:find("Protect") and gui.Name ~= "PitayaUI" then
                 for _, child in ipairs(gui:GetDescendants()) do
                     if child:IsA("GuiObject") then
                         local name = child.Name:lower()
@@ -349,7 +364,7 @@ task.spawn(function()
 end)
 
 -- ---------------------------------------------------------
--- 7. HÀM HỖ TRỢ GAMEPLAY & PHÂN TEAM CHUẨN
+-- 9. HÀM HỖ TRỢ GAMEPLAY & PHÂN TEAM CHUẨN
 -- ---------------------------------------------------------
 local function getPosition(inst)
     if not inst then return nil end
@@ -378,21 +393,16 @@ local function getBall()
     return nil
 end
 
--- Hàm lấy thông tin Team chính xác từ Leaderboard
 local function getPlayerTeam(player)
     if not player then return nil end
-    
-    -- 1. Kiểm tra thuộc tính Team hệ thống
     if player.Team then return player.Team.Name end
     
-    -- 2. Kiểm tra leaderstats / Leaderboard
     local leaderstats = player:FindFirstChild("leaderstats")
     if leaderstats then
         local teamVal = leaderstats:FindFirstChild("Team") or leaderstats:FindFirstChild("Đội")
         if teamVal then return tostring(teamVal.Value) end
     end
     
-    -- 3. Kiểm tra thuộc tính custom trong Player
     local customTeam = player:FindFirstChild("TeamValue") or player:FindFirstChild("TeamName")
     if customTeam then return tostring(customTeam.Value) end
 
@@ -470,10 +480,9 @@ local function performSmartDive(predictedPos, isLeft, isRight, isHigh)
 end
 
 -- ---------------------------------------------------------
--- 8. HỆ THỐNG ESP MINIMALIST (SIÊU NHỎ GỌN - KHÔNG MẤT TẦM NHÌN)
+-- 10. HỆ THỐNG ESP MINIMALIST (SIÊU NHỎ GỌN)
 -- ---------------------------------------------------------
 
--- ESP Cầu thủ siêu gọn (Tên nhỏ + Mét)
 local function createCleanPlayerESP(player)
     local bg = Instance.new("BillboardGui")
     bg.Name = "CleanPlayerESP"
@@ -496,7 +505,6 @@ local function createCleanPlayerESP(player)
     return bg
 end
 
--- ESP Trái bóng nhỏ gọn
 local function createCleanBallESP()
     local bg = Instance.new("BillboardGui")
     bg.Name = "CleanBallESP"
@@ -519,12 +527,11 @@ local function createCleanBallESP()
     return bg
 end
 
--- Vòng lặp cập nhật ESP Realtime
 RunService.Heartbeat:Connect(function()
     local myChar = LocalPlayer.Character
     local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
 
-    -- 1. XỬ LÝ ESP BÓNG GỌN
+    -- ESP Bóng
     local ball = getBall()
     if ball and espBallEnabled then
         local ballTargetPart = ball:IsA("Model") and (ball.PrimaryPart or ball:FindFirstChildWhichIsA("BasePart")) or ball
@@ -560,7 +567,7 @@ RunService.Heartbeat:Connect(function()
         end
     end
 
-    -- 2. XỬ LÝ ESP TOÀN BỘ NGƯỜI CHƠI TRONG PHÒNG
+    -- ESP Người chơi
     local myTeam = getPlayerTeam(LocalPlayer)
 
     for _, plr in ipairs(Players:GetPlayers()) do
@@ -575,15 +582,12 @@ RunService.Heartbeat:Connect(function()
                     pGui.Parent = pHrp
                 end
 
-                -- Phân biệt Team theo Leaderboard / Stats
                 local plrTeam = getPlayerTeam(plr)
                 local isTeammate = (myTeam ~= "NoTeam" and plrTeam ~= "NoTeam") and (myTeam == plrTeam)
                 
-                -- Màu sắc: Đồng đội màu Xanh Lam, Đối thủ màu Đỏ Neon
                 local teamColor = isTeammate and Color3.fromRGB(50, 180, 255) or Color3.fromRGB(255, 50, 50)
                 pGui.ESPLabel.TextColor3 = teamColor
 
-                -- Vòng phát sáng tròn nhỏ dưới chân
                 local circle = pChar:FindFirstChild("TeamCircle")
                 if not circle then
                     circle = Instance.new("Highlight")
@@ -595,7 +599,6 @@ RunService.Heartbeat:Connect(function()
                 circle.FillColor = teamColor
                 circle.OutlineColor = teamColor
 
-                -- Tính số mét
                 if myHrp then
                     local dist = math.floor((pHrp.Position - myHrp.Position).Magnitude / 3)
                     pGui.ESPLabel.Text = plr.DisplayName .. "\n[" .. tostring(dist) .. "m]"
@@ -609,15 +612,15 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ---------------------------------------------------------
--- 9. VÒNG LẶP RENDER STEPPED (XỬ LÝ GAMEPLAY CHÍNH)
+-- 11. VÒNG LẶP RENDER STEPPED (XỬ LÝ MOVEMENT & GAMEPLAY)
 -- ---------------------------------------------------------
 RunService.RenderStepped:Connect(function(dt)
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-    -- 1. Di chuyển bằng Joystick
-    if mobileControlsEnabled and dragging and moveVector.Magnitude > 0.05 and hum then
+    -- Di chuyển bằng Joystick mượt mà
+    if isMobile and mobileControlsEnabled and joystickTouchObject and moveVector.Magnitude > 0.05 and hum then
         local camCFrame = Camera.CFrame
         local forward = camCFrame.LookVector
         local right = camCFrame.RightVector
@@ -629,7 +632,7 @@ RunService.RenderStepped:Connect(function(dt)
         hum:Move(moveDirection, false)
     end
 
-    -- 2. Quỹ đạo bóng
+    -- Quỹ đạo bóng
     local ball = getBall()
     local ballPos = getPosition(ball)
     local now = tick()
@@ -643,7 +646,7 @@ RunService.RenderStepped:Connect(function(dt)
     lastBallPos = ballPos
     lastBallTime = now
 
-    -- 3. Cam Lock Ball
+    -- Cam Lock Ball
     if cameraTrackEnabled and ballPos then
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, ballPos)
     end
@@ -653,8 +656,8 @@ RunService.RenderStepped:Connect(function(dt)
     local goal = getDefendingGoal()
     local goalPos = goal and getPosition(goal)
 
-    -- 4. Auto Positioning
-    if autoPositionEnabled and ballPos and goalPos and not dragging and not isDiving then
+    -- Auto Positioning
+    if autoPositionEnabled and ballPos and goalPos and not joystickTouchObject and not isDiving then
         local distBallToGoal = (ballPos - goalPos).Magnitude
         if distBallToGoal <= CONFIG.POSITIONING_DIST then
             local targetPos = goalPos + (ballPos - goalPos).Unit * 6
@@ -666,7 +669,7 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- 5. Auto Save & Smart Dive
+    -- Auto Save & Smart Dive
     if autoSaveEnabled and ballPos and goalPos then
         local predictedBallPos = ballPos + (ballVelocity * CONFIG.PREDICTION_TIME)
         local distToGoal = (predictedBallPos - goalPos).Magnitude
