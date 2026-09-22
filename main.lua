@@ -1,5 +1,5 @@
 -- =================================================================
--- SMART GK AUTO SAVE - OPTIMIZED & ENHANCED WITH PITAYA UI
+-- SMART GK AUTO SAVE - OPTIMIZED WITH MODERN ESP & PITAYA UI
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
@@ -23,10 +23,10 @@ local CONFIG = {
     BALL_SAVE_DIST = 32,
     PREDICTION_TIME = 0.28,
     COOLDOWN = 1.1,
-    LEFT_RIGHT_THRESHOLD = 2.2, -- Khoảng cách lệch ngang để kích hoạt bay người
+    LEFT_RIGHT_THRESHOLD = 2.2,
     HIGH_SHOT_THRESHOLD = 3.0,
-    CATCH_RADIUS = 3.8,         -- Bán kính thủ môn đứng bắt trực tiếp (Không bay người)
-    POSITIONING_DIST = 45       -- Bán kính bắt đầu tự động di chuyển khép góc
+    CATCH_RADIUS = 3.8,
+    POSITIONING_DIST = 45
 }
 
 local autoSaveEnabled = false
@@ -43,6 +43,12 @@ local lastBallPos = nil
 local lastBallTime = 0
 local ballVelocity = Vector3.zero
 
+-- Container lưu trữ ESP Objects
+local espObjects = {
+    Ball = nil,
+    Players = {}
+}
+
 -- ---------------------------------------------------------
 -- 3. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
 -- ---------------------------------------------------------
@@ -52,7 +58,7 @@ local Window = PitayaUI:CreateWindow({
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v2.0</b> Optimized"
+	LoadingTitle = "<b>Smart GK v2.5</b> ESP Redesign"
 })
 
 -- ---------------------------------------------------------
@@ -272,13 +278,13 @@ GKTab:AddToggle({
 	end
 })
 
--- TAB VISUALS (ESP)
+-- TAB VISUALS (ESP MỚI)
 local VisualTab = Window:CreateTab("Hiển Thị", "👁️")
 
-VisualTab:AddLabel("--- Hệ Thống ESP ---", {BoldText = true})
+VisualTab:AddLabel("--- Hệ Thống ESP Hiện Đại ---", {BoldText = true})
 
 VisualTab:AddToggle({
-	Text = "ESP Bóng (Ball Highlight)",
+	Text = "ESP Bóng Neon (Modern Ball ESP)",
 	BoldText = true,
 	Default = false,
 	Callback = function(state)
@@ -288,7 +294,7 @@ VisualTab:AddToggle({
 })
 
 VisualTab:AddToggle({
-	Text = "ESP Người Chơi (Players)",
+	Text = "ESP Người Chơi UI (Modern Player ESP)",
 	BoldText = true,
 	Default = false,
 	Callback = function(state)
@@ -349,12 +355,14 @@ task.spawn(function()
 end)
 
 -- ---------------------------------------------------------
--- 7. HÀM HỖ TRỢ XỬ LÝ GAMEPLAY
+-- 7. HÀM HỖ TRỢ XỬ LÝ GAMEPLAY & TIM KIEM BONG
 -- ---------------------------------------------------------
 local function getPosition(inst)
     if not inst then return nil end
     if inst:IsA("BasePart") then return inst.Position
-    elseif inst:IsA("Model") then return inst:GetPivot().Position end
+    elseif inst:IsA("Model") then 
+        return inst.PrimaryPart and inst.PrimaryPart.Position or inst:GetPivot().Position 
+    end
     return nil
 end
 
@@ -363,7 +371,14 @@ local function getBall()
     if misc then
         local visuals = misc:FindFirstChild("Visuals")
         if visuals then
-            return visuals:FindFirstChild("ClientBall_MainMatch") or visuals:FindFirstChildWhichIsA("BasePart")
+            local mainBall = visuals:FindFirstChild("ClientBall_MainMatch")
+            if mainBall then
+                if mainBall:IsA("BasePart") then return mainBall end
+                if mainBall:IsA("Model") then
+                    return mainBall.PrimaryPart or mainBall:FindFirstChildWhichIsA("BasePart") or mainBall
+                end
+            end
+            return visuals:FindFirstChildWhichIsA("BasePart")
         end
     end
     return nil
@@ -398,7 +413,6 @@ local function getDefendingGoal()
     return closestGoal
 end
 
--- Tối ưu hóa phán đoán bay người
 local function performSmartDive(predictedPos, isLeft, isRight, isHigh)
     if isDiving then return end
     isDiving = true
@@ -441,48 +455,192 @@ local function performSmartDive(predictedPos, isLeft, isRight, isHigh)
 end
 
 -- ---------------------------------------------------------
--- 8. QUẢN LÝ ESP BÓNG & NGƯỜI CHƠI
+-- 8. HỆ THỐNG ESP BÓNG & NGƯỜI CHƠI HYBRID HIỆN ĐẠI
 -- ---------------------------------------------------------
-task.spawn(function()
-    while task.wait(0.5) do
-        -- ESP BÓNG
-        local ball = getBall()
-        if ball then
-            local ballHighlight = ball:FindFirstChild("BallESP")
-            if espBallEnabled then
-                if not ballHighlight then
-                    ballHighlight = Instance.new("Highlight")
-                    ballHighlight.Name = "BallESP"
-                    ballHighlight.FillColor = Color3.fromRGB(255, 50, 50)
-                    ballHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                    ballHighlight.FillTransparency = 0.3
-                    ballHighlight.Parent = ball
-                end
-            elseif ballHighlight then
-                ballHighlight:Destroy()
+
+-- Hàm tạo ESP UI hiện đại cho Người Chơi
+local function createPlayerESP(player)
+    local bg = Instance.new("BillboardGui")
+    bg.Name = "ModernPlayerESP"
+    bg.AlwaysOnTop = true
+    bg.Size = UDim2.new(0, 140, 0, 60)
+    bg.ExtentsOffset = Vector3.new(0, 3, 0)
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 0.5
+    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    frame.Parent = bg
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = frame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Name = "BorderStroke"
+    stroke.Thickness = 1.5
+    stroke.Parent = frame
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Size = UDim2.new(1, 0, 0.4, 0)
+    nameLabel.Position = UDim2.new(0, 0, 0, 2)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.DisplayName
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextSize = 11
+    nameLabel.Parent = frame
+
+    local distLabel = Instance.new("TextLabel")
+    distLabel.Name = "DistLabel"
+    distLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    distLabel.Position = UDim2.new(0, 0, 0.4, 0)
+    distLabel.BackgroundTransparency = 1
+    distLabel.Text = "0m"
+    distLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    distLabel.Font = Enum.Font.Gotham
+    distLabel.TextSize = 10
+    distLabel.Parent = frame
+
+    local hpBack = Instance.new("Frame")
+    hpBack.Size = UDim2.new(0.85, 0, 0, 4)
+    hpBack.Position = UDim2.new(0.075, 0, 0.78, 0)
+    hpBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    hpBack.BorderSizePixel = 0
+    hpBack.Parent = frame
+
+    local hpBar = Instance.new("Frame")
+    hpBar.Name = "HPBar"
+    hpBar.Size = UDim2.new(1, 0, 1, 0)
+    hpBar.BackgroundColor3 = Color3.fromRGB(50, 220, 50)
+    hpBar.BorderSizePixel = 0
+    hpBar.Parent = hpBack
+
+    return bg
+end
+
+-- Hàm tạo ESP UI hiện đại cho Trái Bóng
+local function createBallESP()
+    local bg = Instance.new("BillboardGui")
+    bg.Name = "ModernBallESP"
+    bg.AlwaysOnTop = true
+    bg.Size = UDim2.new(0, 80, 0, 45)
+    bg.ExtentsOffset = Vector3.new(0, 2, 0)
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 0.4
+    frame.BackgroundColor3 = Color3.fromRGB(255, 30, 30)
+    frame.Parent = bg
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Parent = frame
+
+    local icon = Instance.new("TextLabel")
+    icon.Size = UDim2.new(1, 0, 0.5, 0)
+    icon.BackgroundTransparency = 1
+    icon.Text = "⚽ BÓNG"
+    icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    icon.Font = Enum.Font.GothamBold
+    icon.TextSize = 11
+    icon.Parent = frame
+
+    local distLabel = Instance.new("TextLabel")
+    distLabel.Name = "DistLabel"
+    distLabel.Size = UDim2.new(1, 0, 0.4, 0)
+    distLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    distLabel.BackgroundTransparency = 1
+    distLabel.Text = "0m"
+    distLabel.TextColor3 = Color3.fromRGB(255, 230, 230)
+    distLabel.Font = Enum.Font.GothamBold
+    distLabel.TextSize = 10
+    distLabel.Parent = frame
+
+    return bg
+end
+
+-- Vòng lặp cập nhật ESP realtime
+RunService.Heartbeat:Connect(function()
+    local myChar = LocalPlayer.Character
+    local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
+    -- 1. XỬ LÝ ESP BÓNG
+    local ball = getBall()
+    if ball and espBallEnabled then
+        local ballTargetPart = ball:IsA("Model") and (ball.PrimaryPart or ball:FindFirstChildWhichIsA("BasePart")) or ball
+        if ballTargetPart then
+            local ballGui = ballTargetPart:FindFirstChild("ModernBallESP")
+            if not ballGui then
+                ballGui = createBallESP()
+                ballGui.Parent = ballTargetPart
+            end
+
+            -- Cập nhật Highlight cho bóng
+            local ballHighlight = ballTargetPart:FindFirstChild("BallHighlight")
+            if not ballHighlight then
+                ballHighlight = Instance.new("Highlight")
+                ballHighlight.Name = "BallHighlight"
+                ballHighlight.FillColor = Color3.fromRGB(255, 50, 50)
+                ballHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                ballHighlight.FillTransparency = 0.2
+                ballHighlight.Parent = ballTargetPart
+            end
+
+            if myHrp then
+                local dist = math.floor((ballTargetPart.Position - myHrp.Position).Magnitude / 3)
+                ballGui.Frame.DistLabel.Text = tostring(dist) .. "m"
             end
         end
+    else
+        if ball then
+            local ballTargetPart = ball:IsA("Model") and (ball.PrimaryPart or ball:FindFirstChildWhichIsA("BasePart")) or ball
+            if ballTargetPart then
+                if ballTargetPart:FindFirstChild("ModernBallESP") then ballTargetPart.ModernBallESP:Destroy() end
+                if ballTargetPart:FindFirstChild("BallHighlight") then ballTargetPart.BallHighlight:Destroy() end
+            end
+        end
+    end
 
-        -- ESP NGƯỜI CHƠI
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer and plr.Character then
-                local hl = plr.Character:FindFirstChild("PlayerESP")
-                if espPlayersEnabled then
-                    if not hl then
-                        hl = Instance.new("Highlight")
-                        hl.Name = "PlayerESP"
-                        hl.FillTransparency = 0.5
-                        hl.OutlineTransparency = 0.1
-                        hl.Parent = plr.Character
-                    end
-                    -- Phân biệt màu đội
-                    if plr.Team == LocalPlayer.Team then
-                        hl.FillColor = Color3.fromRGB(50, 255, 50)
-                    else
-                        hl.FillColor = Color3.fromRGB(255, 50, 50)
-                    end
-                elseif hl then
-                    hl:Destroy()
+    -- 2. XỬ LÝ ESP NGƯỜI CHƠI
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local pChar = plr.Character
+            local pHrp = pChar.HumanoidRootPart
+            local pHum = pChar:FindFirstChildOfClass("Humanoid")
+
+            if espPlayersEnabled and pHum and pHum.Health > 0 then
+                local pGui = pHrp:FindFirstChild("ModernPlayerESP")
+                if not pGui then
+                    pGui = createPlayerESP(plr)
+                    pGui.Parent = pHrp
+                end
+
+                -- Phân biệt Đội Bóng & Màu Sắc
+                local isTeammate = (plr.Team == LocalPlayer.Team) and (LocalPlayer.Team ~= nil)
+                local mainColor = isTeammate and Color3.fromRGB(50, 220, 100) or Color3.fromRGB(255, 60, 60)
+                
+                pGui.Frame.BorderStroke.Color = mainColor
+                pGui.Frame.NameLabel.TextColor3 = mainColor
+
+                -- Tính khoảng cách
+                if myHrp then
+                    local dist = math.floor((pHrp.Position - myHrp.Position).Magnitude / 3)
+                    pGui.Frame.DistLabel.Text = tostring(dist) .. "m"
+                end
+
+                -- Cập nhật Thanh Máu
+                local hpPercent = math.clamp(pHum.Health / pHum.MaxHealth, 0, 1)
+                pGui.Frame.HPBack.HPBar.Size = UDim2.new(hpPercent, 0, 1, 0)
+            else
+                if pHrp:FindFirstChild("ModernPlayerESP") then
+                    pHrp.ModernPlayerESP:Destroy()
                 end
             end
         end
@@ -490,14 +648,14 @@ task.spawn(function()
 end)
 
 -- ---------------------------------------------------------
--- 9. VÒNG LẶP RENDER STEPPED (XỬ LÝ CHÍNH)
+-- 9. VÒNG LẶP RENDER STEPPED (XỬ LÝ GAMEPLAY CHÍNH)
 -- ---------------------------------------------------------
 RunService.RenderStepped:Connect(function(dt)
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-    -- 1. Điều khiển di chuyển Joystick Mobile
+    -- 1. Di chuyển bằng Joystick
     if mobileControlsEnabled and dragging and moveVector.Magnitude > 0.05 and hum then
         local camCFrame = Camera.CFrame
         local forward = camCFrame.LookVector
@@ -510,7 +668,7 @@ RunService.RenderStepped:Connect(function(dt)
         hum:Move(moveDirection, false)
     end
 
-    -- 2. Tính vận tốc bóng
+    -- 2. Quỹ đạo bóng
     local ball = getBall()
     local ballPos = getPosition(ball)
     local now = tick()
@@ -534,11 +692,10 @@ RunService.RenderStepped:Connect(function(dt)
     local goal = getDefendingGoal()
     local goalPos = goal and getPosition(goal)
 
-    -- 4. Tự Động Khép Góc Khung Thành (Auto Positioning via Humanoid:Move)
+    -- 4. Auto Positioning
     if autoPositionEnabled and ballPos and goalPos and not dragging and not isDiving then
         local distBallToGoal = (ballPos - goalPos).Magnitude
         if distBallToGoal <= CONFIG.POSITIONING_DIST then
-            -- Tính điểm đứng khép góc giữa bóng và khung thành (cách khung thành 6 stud)
             local targetPos = goalPos + (ballPos - goalPos).Unit * 6
             local moveDir = (targetPos - hrp.Position)
             
@@ -548,24 +705,20 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- 5. Auto Save & Bay Người Thông Minh (Optimized Smart Dive)
+    -- 5. Auto Save & Smart Dive
     if autoSaveEnabled and ballPos and goalPos then
         local predictedBallPos = ballPos + (ballVelocity * CONFIG.PREDICTION_TIME)
         local distToGoal = (predictedBallPos - goalPos).Magnitude
         
         if distToGoal <= CONFIG.BALL_SAVE_DIST and not isDiving then
-            -- Chuyển tọa độ dự đoán bóng về không gian cá nhân thủ môn
             local relPos = hrp.CFrame:PointToObjectSpace(predictedBallPos)
-            local horizontalDist = math.abs(relPos.X)
             local totalDistToKeeper = (predictedBallPos - hrp.Position).Magnitude
 
-            -- KIỂM TRA ĐIỀU KIỆN: Nếu bóng nằm trong bán kính bắt được trực tiếp -> KHÔNG BAY NGƯỜI
             if totalDistToKeeper > CONFIG.CATCH_RADIUS then
                 local isLeft = relPos.X < -CONFIG.LEFT_RIGHT_THRESHOLD
                 local isRight = relPos.X > CONFIG.LEFT_RIGHT_THRESHOLD
                 local isHigh = relPos.Y > CONFIG.HIGH_SHOT_THRESHOLD
 
-                -- Chỉ bay người nếu bóng thực sự bay lệch sang 2 bên
                 if isLeft or isRight or isHigh then
                     performSmartDive(predictedBallPos, isLeft, isRight, isHigh)
                 end
