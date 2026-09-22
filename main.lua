@@ -3,7 +3,7 @@
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
-local PitayaUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pitaya-real/PitayaUI/refs/heads/main/Pitayauisource.lua?v=" .. tick()))()
+local PitayaUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pitaya-real/PitayaUI/refs/heads/main/Pitayauisource.lua"))()
 
 -- 2. KHỞI TẠO CÁC SERVICE ROBLOX
 local Players = game:GetService("Players")
