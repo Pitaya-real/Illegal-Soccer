@@ -1,5 +1,5 @@
 -- =================================================================
--- SMART GK AUTO SAVE - OPTIMIZED WITH MODERN ESP & PITAYA UI
+-- SMART GK AUTO SAVE - MINIMALIST ESP & OPTIMIZED FOR MOBILE
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
@@ -43,22 +43,16 @@ local lastBallPos = nil
 local lastBallTime = 0
 local ballVelocity = Vector3.zero
 
--- Container lưu trữ ESP Objects
-local espObjects = {
-    Ball = nil,
-    Players = {}
-}
-
 -- ---------------------------------------------------------
 -- 3. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
 -- ---------------------------------------------------------
 local Window = PitayaUI:CreateWindow({
-	Title = "Smart GK System | Premium",
+	Title = "Smart GK System | Minimal ESP",
 	Logo = "rbxassetid://73866843639743",
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v2.5</b> ESP Redesign"
+	LoadingTitle = "<b>Smart GK v3.0</b> Clean UI"
 })
 
 -- ---------------------------------------------------------
@@ -278,13 +272,13 @@ GKTab:AddToggle({
 	end
 })
 
--- TAB VISUALS (ESP MỚI)
+-- TAB VISUALS (ESP GỌN GÀNG)
 local VisualTab = Window:CreateTab("Hiển Thị", "👁️")
 
-VisualTab:AddLabel("--- Hệ Thống ESP Hiện Đại ---", {BoldText = true})
+VisualTab:AddLabel("--- ESP Tinh Gọn (Minimalist) ---", {BoldText = true})
 
 VisualTab:AddToggle({
-	Text = "ESP Bóng Neon (Modern Ball ESP)",
+	Text = "ESP Trái Bóng (Mini Ball Marker)",
 	BoldText = true,
 	Default = false,
 	Callback = function(state)
@@ -294,12 +288,12 @@ VisualTab:AddToggle({
 })
 
 VisualTab:AddToggle({
-	Text = "ESP Người Chơi UI (Modern Player ESP)",
+	Text = "ESP Cầu Thủ (Leaderboard Team ESP)",
 	BoldText = true,
 	Default = false,
 	Callback = function(state)
 		espPlayersEnabled = state
-		Window:Notify("ESP", "ESP Người chơi: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
+		Window:Notify("ESP", "ESP Cầu Thủ: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
 	end
 })
 
@@ -355,7 +349,7 @@ task.spawn(function()
 end)
 
 -- ---------------------------------------------------------
--- 7. HÀM HỖ TRỢ XỬ LÝ GAMEPLAY & TIM KIEM BONG
+-- 7. HÀM HỖ TRỢ GAMEPLAY & PHÂN TEAM CHUẨN
 -- ---------------------------------------------------------
 local function getPosition(inst)
     if not inst then return nil end
@@ -382,6 +376,27 @@ local function getBall()
         end
     end
     return nil
+end
+
+-- Hàm lấy thông tin Team chính xác từ Leaderboard
+local function getPlayerTeam(player)
+    if not player then return nil end
+    
+    -- 1. Kiểm tra thuộc tính Team hệ thống
+    if player.Team then return player.Team.Name end
+    
+    -- 2. Kiểm tra leaderstats / Leaderboard
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if leaderstats then
+        local teamVal = leaderstats:FindFirstChild("Team") or leaderstats:FindFirstChild("Đội")
+        if teamVal then return tostring(teamVal.Value) end
+    end
+    
+    -- 3. Kiểm tra thuộc tính custom trong Player
+    local customTeam = player:FindFirstChild("TeamValue") or player:FindFirstChild("TeamName")
+    if customTeam then return tostring(customTeam.Value) end
+
+    return "NoTeam"
 end
 
 local function getDefendingGoal()
@@ -455,193 +470,139 @@ local function performSmartDive(predictedPos, isLeft, isRight, isHigh)
 end
 
 -- ---------------------------------------------------------
--- 8. HỆ THỐNG ESP BÓNG & NGƯỜI CHƠI HYBRID HIỆN ĐẠI
+-- 8. HỆ THỐNG ESP MINIMALIST (SIÊU NHỎ GỌN - KHÔNG MẤT TẦM NHÌN)
 -- ---------------------------------------------------------
 
--- Hàm tạo ESP UI hiện đại cho Người Chơi
-local function createPlayerESP(player)
+-- ESP Cầu thủ siêu gọn (Tên nhỏ + Mét)
+local function createCleanPlayerESP(player)
     local bg = Instance.new("BillboardGui")
-    bg.Name = "ModernPlayerESP"
+    bg.Name = "CleanPlayerESP"
     bg.AlwaysOnTop = true
-    bg.Size = UDim2.new(0, 140, 0, 60)
-    bg.ExtentsOffset = Vector3.new(0, 3, 0)
+    bg.Size = UDim2.new(0, 100, 0, 24)
+    bg.ExtentsOffset = Vector3.new(0, 2.5, 0)
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundTransparency = 0.5
-    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-    frame.Parent = bg
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = frame
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Name = "BorderStroke"
-    stroke.Thickness = 1.5
-    stroke.Parent = frame
-
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Name = "NameLabel"
-    nameLabel.Size = UDim2.new(1, 0, 0.4, 0)
-    nameLabel.Position = UDim2.new(0, 0, 0, 2)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = player.DisplayName
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 11
-    nameLabel.Parent = frame
-
-    local distLabel = Instance.new("TextLabel")
-    distLabel.Name = "DistLabel"
-    distLabel.Size = UDim2.new(1, 0, 0.3, 0)
-    distLabel.Position = UDim2.new(0, 0, 0.4, 0)
-    distLabel.BackgroundTransparency = 1
-    distLabel.Text = "0m"
-    distLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    distLabel.Font = Enum.Font.Gotham
-    distLabel.TextSize = 10
-    distLabel.Parent = frame
-
-    local hpBack = Instance.new("Frame")
-    hpBack.Size = UDim2.new(0.85, 0, 0, 4)
-    hpBack.Position = UDim2.new(0.075, 0, 0.78, 0)
-    hpBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    hpBack.BorderSizePixel = 0
-    hpBack.Parent = frame
-
-    local hpBar = Instance.new("Frame")
-    hpBar.Name = "HPBar"
-    hpBar.Size = UDim2.new(1, 0, 1, 0)
-    hpBar.BackgroundColor3 = Color3.fromRGB(50, 220, 50)
-    hpBar.BorderSizePixel = 0
-    hpBar.Parent = hpBack
+    local txt = Instance.new("TextLabel")
+    txt.Name = "ESPLabel"
+    txt.Size = UDim2.new(1, 0, 1, 0)
+    txt.BackgroundTransparency = 1
+    txt.Text = player.DisplayName .. "\n[0m]"
+    txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 10
+    txt.TextStrokeTransparency = 0.2
+    txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    txt.Parent = bg
 
     return bg
 end
 
--- Hàm tạo ESP UI hiện đại cho Trái Bóng
-local function createBallESP()
+-- ESP Trái bóng nhỏ gọn
+local function createCleanBallESP()
     local bg = Instance.new("BillboardGui")
-    bg.Name = "ModernBallESP"
+    bg.Name = "CleanBallESP"
     bg.AlwaysOnTop = true
-    bg.Size = UDim2.new(0, 80, 0, 45)
-    bg.ExtentsOffset = Vector3.new(0, 2, 0)
+    bg.Size = UDim2.new(0, 80, 0, 20)
+    bg.ExtentsOffset = Vector3.new(0, 1.8, 0)
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundTransparency = 0.4
-    frame.BackgroundColor3 = Color3.fromRGB(255, 30, 30)
-    frame.Parent = bg
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 2
-    stroke.Color = Color3.fromRGB(255, 255, 255)
-    stroke.Parent = frame
-
-    local icon = Instance.new("TextLabel")
-    icon.Size = UDim2.new(1, 0, 0.5, 0)
-    icon.BackgroundTransparency = 1
-    icon.Text = "⚽ BÓNG"
-    icon.TextColor3 = Color3.fromRGB(255, 255, 255)
-    icon.Font = Enum.Font.GothamBold
-    icon.TextSize = 11
-    icon.Parent = frame
-
-    local distLabel = Instance.new("TextLabel")
-    distLabel.Name = "DistLabel"
-    distLabel.Size = UDim2.new(1, 0, 0.4, 0)
-    distLabel.Position = UDim2.new(0, 0, 0.5, 0)
-    distLabel.BackgroundTransparency = 1
-    distLabel.Text = "0m"
-    distLabel.TextColor3 = Color3.fromRGB(255, 230, 230)
-    distLabel.Font = Enum.Font.GothamBold
-    distLabel.TextSize = 10
-    distLabel.Parent = frame
+    local txt = Instance.new("TextLabel")
+    txt.Name = "BallLabel"
+    txt.Size = UDim2.new(1, 0, 1, 0)
+    txt.BackgroundTransparency = 1
+    txt.Text = "⚽ BÓNG [0m]"
+    txt.TextColor3 = Color3.fromRGB(255, 220, 50)
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 11
+    txt.TextStrokeTransparency = 0.2
+    txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    txt.Parent = bg
 
     return bg
 end
 
--- Vòng lặp cập nhật ESP realtime
+-- Vòng lặp cập nhật ESP Realtime
 RunService.Heartbeat:Connect(function()
     local myChar = LocalPlayer.Character
     local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
 
-    -- 1. XỬ LÝ ESP BÓNG
+    -- 1. XỬ LÝ ESP BÓNG GỌN
     local ball = getBall()
     if ball and espBallEnabled then
         local ballTargetPart = ball:IsA("Model") and (ball.PrimaryPart or ball:FindFirstChildWhichIsA("BasePart")) or ball
         if ballTargetPart then
-            local ballGui = ballTargetPart:FindFirstChild("ModernBallESP")
+            local ballGui = ballTargetPart:FindFirstChild("CleanBallESP")
             if not ballGui then
-                ballGui = createBallESP()
+                ballGui = createCleanBallESP()
                 ballGui.Parent = ballTargetPart
             end
 
-            -- Cập nhật Highlight cho bóng
-            local ballHighlight = ballTargetPart:FindFirstChild("BallHighlight")
-            if not ballHighlight then
-                ballHighlight = Instance.new("Highlight")
-                ballHighlight.Name = "BallHighlight"
-                ballHighlight.FillColor = Color3.fromRGB(255, 50, 50)
-                ballHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                ballHighlight.FillTransparency = 0.2
-                ballHighlight.Parent = ballTargetPart
+            local highlight = ballTargetPart:FindFirstChild("BallHighlight")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "BallHighlight"
+                highlight.FillColor = Color3.fromRGB(255, 200, 0)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.4
+                highlight.Parent = ballTargetPart
             end
 
             if myHrp then
                 local dist = math.floor((ballTargetPart.Position - myHrp.Position).Magnitude / 3)
-                ballGui.Frame.DistLabel.Text = tostring(dist) .. "m"
+                ballGui.BallLabel.Text = "⚽ BÓNG [" .. tostring(dist) .. "m]"
             end
         end
     else
         if ball then
             local ballTargetPart = ball:IsA("Model") and (ball.PrimaryPart or ball:FindFirstChildWhichIsA("BasePart")) or ball
             if ballTargetPart then
-                if ballTargetPart:FindFirstChild("ModernBallESP") then ballTargetPart.ModernBallESP:Destroy() end
+                if ballTargetPart:FindFirstChild("CleanBallESP") then ballTargetPart.CleanBallESP:Destroy() end
                 if ballTargetPart:FindFirstChild("BallHighlight") then ballTargetPart.BallHighlight:Destroy() end
             end
         end
     end
 
-    -- 2. XỬ LÝ ESP NGƯỜI CHƠI
+    -- 2. XỬ LÝ ESP TOÀN BỘ NGƯỜI CHƠI TRONG PHÒNG
+    local myTeam = getPlayerTeam(LocalPlayer)
+
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
             local pChar = plr.Character
             local pHrp = pChar.HumanoidRootPart
-            local pHum = pChar:FindFirstChildOfClass("Humanoid")
 
-            if espPlayersEnabled and pHum and pHum.Health > 0 then
-                local pGui = pHrp:FindFirstChild("ModernPlayerESP")
+            if espPlayersEnabled then
+                local pGui = pHrp:FindFirstChild("CleanPlayerESP")
                 if not pGui then
-                    pGui = createPlayerESP(plr)
+                    pGui = createCleanPlayerESP(plr)
                     pGui.Parent = pHrp
                 end
 
-                -- Phân biệt Đội Bóng & Màu Sắc
-                local isTeammate = (plr.Team == LocalPlayer.Team) and (LocalPlayer.Team ~= nil)
-                local mainColor = isTeammate and Color3.fromRGB(50, 220, 100) or Color3.fromRGB(255, 60, 60)
+                -- Phân biệt Team theo Leaderboard / Stats
+                local plrTeam = getPlayerTeam(plr)
+                local isTeammate = (myTeam ~= "NoTeam" and plrTeam ~= "NoTeam") and (myTeam == plrTeam)
                 
-                pGui.Frame.BorderStroke.Color = mainColor
-                pGui.Frame.NameLabel.TextColor3 = mainColor
+                -- Màu sắc: Đồng đội màu Xanh Lam, Đối thủ màu Đỏ Neon
+                local teamColor = isTeammate and Color3.fromRGB(50, 180, 255) or Color3.fromRGB(255, 50, 50)
+                pGui.ESPLabel.TextColor3 = teamColor
 
-                -- Tính khoảng cách
+                -- Vòng phát sáng tròn nhỏ dưới chân
+                local circle = pChar:FindFirstChild("TeamCircle")
+                if not circle then
+                    circle = Instance.new("Highlight")
+                    circle.Name = "TeamCircle"
+                    circle.FillTransparency = 0.6
+                    circle.OutlineTransparency = 0.2
+                    circle.Parent = pChar
+                end
+                circle.FillColor = teamColor
+                circle.OutlineColor = teamColor
+
+                -- Tính số mét
                 if myHrp then
                     local dist = math.floor((pHrp.Position - myHrp.Position).Magnitude / 3)
-                    pGui.Frame.DistLabel.Text = tostring(dist) .. "m"
+                    pGui.ESPLabel.Text = plr.DisplayName .. "\n[" .. tostring(dist) .. "m]"
                 end
-
-                -- Cập nhật Thanh Máu
-                local hpPercent = math.clamp(pHum.Health / pHum.MaxHealth, 0, 1)
-                pGui.Frame.HPBack.HPBar.Size = UDim2.new(hpPercent, 0, 1, 0)
             else
-                if pHrp:FindFirstChild("ModernPlayerESP") then
-                    pHrp.ModernPlayerESP:Destroy()
-                end
+                if pHrp:FindFirstChild("CleanPlayerESP") then pHrp.CleanPlayerESP:Destroy() end
+                if pChar:FindFirstChild("TeamCircle") then pChar.TeamCircle:Destroy() end
             end
         end
     end
