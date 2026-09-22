@@ -1,5 +1,5 @@
 -- =================================================================
--- SMART GK AUTO SAVE v5.0 - DYNAMIC PHYSICS & LOW/HIGH SHOTS FIX
+-- SMART GK AUTO SAVE - ISOLATED JOYSTICK (NO CAM ROTATION)
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
@@ -17,18 +17,17 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 -- ---------------------------------------------------------
--- CẤU HÌNH & BIẾN TOÀN CỤC CỦA HỆ THỐNG SMART GK v5.0
+-- CẤU HÌNH & BIẾN TOÀN CỤC CỦA HỆ THỐNG SMART GK
 -- ---------------------------------------------------------
 local CONFIG = {
-    GOAL_DETECTION_DIST = 100,
-    BALL_SAVE_DIST = 35,
+    GOAL_DETECTION_DIST = 70,
+    BALL_SAVE_DIST = 32,
     PREDICTION_TIME = 0.28,
-    COOLDOWN = 0.9,
-    LEFT_RIGHT_THRESHOLD = 1.5,
-    HIGH_SHOT_THRESHOLD = 2.2,    -- Độ cao Y > 2.2 tính là bóng cao
-    CATCH_RADIUS = 3.2,
-    POSITIONING_DIST = 45,
-    MIN_BALL_SPEED = 8            -- Phản xạ siêu tốc khi vận tốc bóng >= 8
+    COOLDOWN = 1.1,
+    LEFT_RIGHT_THRESHOLD = 2.2,
+    HIGH_SHOT_THRESHOLD = 3.0,
+    CATCH_RADIUS = 3.8,
+    POSITIONING_DIST = 45
 }
 
 local autoSaveEnabled = false
@@ -37,7 +36,6 @@ local autoPositionEnabled = false
 local mobileControlsEnabled = true
 local espBallEnabled = false
 local espPlayersEnabled = false
-local practiceModeEnabled = false
 
 local isDiving = false
 local isSprinting = false
@@ -55,12 +53,12 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 -- 4. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
 -- ---------------------------------------------------------
 local Window = PitayaUI:CreateWindow({
-	Title = "Smart GK System v5.0",
+	Title = "Smart GK System | Flexible Touch",
 	Logo = "rbxassetid://73866843639743",
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v5.0</b> Ultimate Physics Edition"
+	LoadingTitle = "<b>Smart GK v4.1</b> Optimized"
 })
 
 -- ---------------------------------------------------------
@@ -93,8 +91,9 @@ if not isMobile then
 end
 
 -- ---------------------------------------------------------
--- 6. TẠO CÁC NÚT BẤM CẢM ỨNG ĐỘC LẬP
+-- 6. TẠO CÁC NÚT BẤM CẢM ỨNG ĐỘC LẬP (LINH HOẠT VỪA BẤM VỪA XOAY CAM)
 -- ---------------------------------------------------------
+
 local touchRegistry = {}
 
 local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onRelease)
@@ -140,6 +139,7 @@ local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onR
     return btn
 end
 
+-- Giải phóng phím bấm mượt mà
 UserInputService.InputEnded:Connect(function(input)
     if touchRegistry[input] then
         local data = touchRegistry[input]
@@ -182,12 +182,12 @@ createSeamlessButton("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.n
 )
 
 -- ---------------------------------------------------------
--- JOYSTICK CHẶN XOAY CAMERA
+-- JOYSTICK BIẾN THÀNH IMAGEBUTTON ĐỂ CHẶN RIÊNG XOAY CAMERA
 -- ---------------------------------------------------------
 local moveVector = Vector2.zero
 local joystickTouchObject = nil
 
-local TouchBase = Instance.new("ImageButton")
+local TouchBase = Instance.new("ImageButton") -- Đổi thành ImageButton để dùng thuộc tính Modal
 TouchBase.Name = "JoystickBase"
 TouchBase.Size = UDim2.new(0, 130, 0, 130)
 TouchBase.Position = UDim2.new(0.05, 0, 0.52, 0)
@@ -195,7 +195,7 @@ TouchBase.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 TouchBase.BackgroundTransparency = 0.5
 TouchBase.ZIndex = 60
 TouchBase.Active = true
-TouchBase.Modal = true
+TouchBase.Modal = true -- KHÓA RIÊNG VÙNG NÀY KHÔNG CHO XOAY CAMERA
 TouchBase.AutoButtonColor = false
 TouchBase.Image = ""
 TouchBase.Parent = MobileControlsGui
@@ -260,19 +260,9 @@ end)
 -- ---------------------------------------------------------
 -- 7. TAB TRÊN PITAYA UI
 -- ---------------------------------------------------------
-local GKTab = Window:CreateTab("Smart GK v5.0", "⚽")
+local GKTab = Window:CreateTab("Smart GK", "⚽")
 
 GKTab:AddLabel("--- Tự Động Thủ Môn ---", {BoldText = true})
-
-GKTab:AddToggle({
-	Text = "Chế Độ Tập Luyện (Practice Mode)",
-	BoldText = true,
-	Default = false,
-	Callback = function(state)
-		practiceModeEnabled = state
-		Window:Notify("Smart GK", "Chế độ tập luyện: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
-	end
-})
 
 GKTab:AddToggle({
 	Text = "Tự Động Bắt Bóng (Auto Save)",
@@ -381,7 +371,7 @@ task.spawn(function()
 end)
 
 -- ---------------------------------------------------------
--- 9. HÀM HỖ TRỢ BẮT BÓNG TẬP VÀ KHUNG THÀNH TẬP
+-- 9. HÀM HỖ TRỢ GAMEPLAY & PHÂN TEAM CHUẨN
 -- ---------------------------------------------------------
 local function getPosition(inst)
     if not inst then return nil end
@@ -393,53 +383,17 @@ local function getPosition(inst)
 end
 
 local function getBall()
-    local char = LocalPlayer.Character
-    local hrpPos = char and char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.Position
-
-    if practiceModeEnabled then
-        local foundBalls = {}
-        local searchFolders = {
-            Workspace:FindFirstChild("Misc"),
-            Workspace:FindFirstChild("Lobby") and Workspace.Lobby:FindFirstChild("Misc")
-        }
-
-        for _, parentFolder in ipairs(searchFolders) do
-            if parentFolder then
-                local visuals = parentFolder:FindFirstChild("Visuals")
-                if visuals then
-                    for _, child in ipairs(visuals:GetChildren()) do
-                        if child.Name:find("ClientBall_Practice") then
-                            table.insert(foundBalls, child)
-                        end
-                    end
-                end
-            end
-        end
-
-        if #foundBalls > 0 then
-            if not hrpPos then return foundBalls[1] end
-            local closestBall = nil
-            local shortestDist = math.huge
-            for _, b in ipairs(foundBalls) do
-                local bPos = getPosition(b)
-                if bPos then
-                    local dist = (bPos - hrpPos).Magnitude
-                    if dist < shortestDist then
-                        shortestDist = dist
-                        closestBall = b
-                    end
-                end
-            end
-            return closestBall
-        end
-    end
-
     local misc = Workspace:FindFirstChild("Misc")
     if misc then
         local visuals = misc:FindFirstChild("Visuals")
         if visuals then
             local mainBall = visuals:FindFirstChild("ClientBall_MainMatch")
-            if mainBall then return mainBall end
+            if mainBall then
+                if mainBall:IsA("BasePart") then return mainBall end
+                if mainBall:IsA("Model") then
+                    return mainBall.PrimaryPart or mainBall:FindFirstChildWhichIsA("BasePart") or mainBall
+                end
+            end
             return visuals:FindFirstChildWhichIsA("BasePart")
         end
     end
@@ -467,24 +421,6 @@ local function getDefendingGoal()
     if not char then return nil end
     local hrpPos = getPosition(char:FindFirstChild("HumanoidRootPart"))
     if not hrpPos then return nil end
-
-    if practiceModeEnabled then
-        local lobby = Workspace:FindFirstChild("Lobby")
-        if lobby then
-            local practice = lobby:FindFirstChild("Practice")
-            if practice then
-                local goalsFolder = practice:FindFirstChild("Goals")
-                if goalsFolder then
-                    local defence = goalsFolder:FindFirstChild("Defence")
-                    if defence then
-                        local goalMesh = defence:FindFirstChild("GoalMesh") or defence:FindFirstChild("Goal")
-                        if goalMesh then return goalMesh end
-                    end
-                end
-            end
-        end
-    end
-
     local map = Workspace:FindFirstChild("Map")
     if not map or not map:FindFirstChild("Data") then return nil end
     
@@ -509,56 +445,40 @@ local function getDefendingGoal()
     return closestGoal
 end
 
--- =========================================================
--- HÀM SMART DIVE v5.0: PHÂN TÁCH CHUẨN TRÌNH TỰ BẤM PHÍM
--- =========================================================
 local function performSmartDive(predictedPos, isLeft, isRight, isHigh)
     if isDiving then return end
     isDiving = true
-    
     task.spawn(function()
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then isDiving = false return end
+        
+        if hrp then
+            hrp.CFrame = CFrame.new(hrp.Position, Vector3.new(predictedPos.X, hrp.Position.Y, predictedPos.Z))
+        end
 
-        -- Xoay mặt về hướng bóng
-        hrp.CFrame = CFrame.new(hrp.Position, Vector3.new(predictedPos.X, hrp.Position.Y, predictedPos.Z))
+        if isHigh then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+            task.wait(0.03)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+            task.wait(0.03)
+        end
 
         local dirKey = nil
         if isLeft then dirKey = Enum.KeyCode.A
         elseif isRight then dirKey = Enum.KeyCode.D end
 
-        if isHigh then
-            -- BÓNG CAO: NHẢY (SPACE) TRƯỚC -> HƯỚNG (A/D) -> DIVE (E)
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-            task.wait(0.015)
-
-            if dirKey then
-                VirtualInputManager:SendKeyEvent(true, dirKey, false, game)
-            end
-            
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0)
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-            
+        if dirKey then
+            VirtualInputManager:SendKeyEvent(true, dirKey, false, game)
+            task.wait(0.02)
+        end
+        
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0)
+        task.wait(0.05)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0)
+        
+        if dirKey then
             task.wait(0.03)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-            if dirKey then VirtualInputManager:SendKeyEvent(false, dirKey, false, game) end
-
-        else
-            -- BÓNG SỆT/THẤP: HƯỚNG (A/D) TRƯỚC -> DIVE (E) -> TUYỆT ĐỐI BỎ QUA SPACE
-            if dirKey then
-                VirtualInputManager:SendKeyEvent(true, dirKey, false, game)
-            end
-            
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0)
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-            
-            task.wait(0.03)
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-            if dirKey then VirtualInputManager:SendKeyEvent(false, dirKey, false, game) end
+            VirtualInputManager:SendKeyEvent(false, dirKey, false, game)
         end
         
         task.wait(CONFIG.COOLDOWN)
@@ -569,6 +489,7 @@ end
 -- ---------------------------------------------------------
 -- 10. HỆ THỐNG ESP MINIMALIST
 -- ---------------------------------------------------------
+
 local function createCleanPlayerESP(player)
     local bg = Instance.new("BillboardGui")
     bg.Name = "CleanPlayerESP"
@@ -617,6 +538,7 @@ RunService.Heartbeat:Connect(function()
     local myChar = LocalPlayer.Character
     local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
 
+    -- ESP Bóng
     local ball = getBall()
     if ball and espBallEnabled then
         local ballTargetPart = ball:IsA("Model") and (ball.PrimaryPart or ball:FindFirstChildWhichIsA("BasePart")) or ball
@@ -652,6 +574,7 @@ RunService.Heartbeat:Connect(function()
         end
     end
 
+    -- ESP Người chơi
     local myTeam = getPlayerTeam(LocalPlayer)
 
     for _, plr in ipairs(Players:GetPlayers()) do
@@ -696,24 +619,27 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ---------------------------------------------------------
--- 11. VÒNG LẶP RENDER STEPPED (SMART GK ENGINE v5.0)
+-- 11. VÒNG LẶP RENDER STEPPED (DI CHUYỂN & LOGIC GK)
 -- ---------------------------------------------------------
 RunService.RenderStepped:Connect(function(dt)
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-    -- Di chuyển bằng Joystick
+    -- Di chuyển bằng Joystick dựa theo hướng nhìn của Camera
     if isMobile and mobileControlsEnabled and joystickTouchObject and moveVector.Magnitude > 0.05 and hum then
         local camCFrame = Camera.CFrame
-        local forward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z).Unit
-        local right = Vector3.new(camCFrame.RightVector.X, 0, camCFrame.RightVector.Z).Unit
+        local forward = camCFrame.LookVector
+        local right = camCFrame.RightVector
+        
+        forward = Vector3.new(forward.X, 0, forward.Z).Unit
+        right = Vector3.new(right.X, 0, right.Z).Unit
         
         local moveDirection = (right * moveVector.X) + (forward * (-moveVector.Y))
         hum:Move(moveDirection, false)
     end
 
-    -- Quỹ đạo bóng & Vận tốc bóng
+    -- Quỹ đạo bóng
     local ball = getBall()
     local ballPos = getPosition(ball)
     local now = tick()
@@ -723,13 +649,11 @@ RunService.RenderStepped:Connect(function(dt)
         if timeDiff > 0 then
             ballVelocity = (ballPos - lastBallPos) / timeDiff
         end
-    else
-        ballVelocity = Vector3.zero
     end
     lastBallPos = ballPos
     lastBallTime = now
 
-    -- Cam Lock Ball
+    -- Cam Lock Ball (Chỉ hoạt động khi bật Toggle Cam Lock trong Pitaya UI)
     if cameraTrackEnabled and ballPos then
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, ballPos)
     end
@@ -739,7 +663,7 @@ RunService.RenderStepped:Connect(function(dt)
     local goal = getDefendingGoal()
     local goalPos = goal and getPosition(goal)
 
-    -- Auto Positioning (Khép góc)
+    -- Auto Positioning
     if autoPositionEnabled and ballPos and goalPos and not joystickTouchObject and not isDiving then
         local distBallToGoal = (ballPos - goalPos).Magnitude
         if distBallToGoal <= CONFIG.POSITIONING_DIST then
@@ -752,34 +676,22 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- AUTO SAVE & SMART DIVE ENGINE v5.0
-    if autoSaveEnabled and ballPos and goalPos and not isDiving then
-        local ballSpeed = ballVelocity.Magnitude
+    -- Auto Save & Smart Dive
+    if autoSaveEnabled and ballPos and goalPos then
+        local predictedBallPos = ballPos + (ballVelocity * CONFIG.PREDICTION_TIME)
+        local distToGoal = (predictedBallPos - goalPos).Magnitude
+        
+        if distToGoal <= CONFIG.BALL_SAVE_DIST and not isDiving then
+            local relPos = hrp.CFrame:PointToObjectSpace(predictedBallPos)
+            local totalDistToKeeper = (predictedBallPos - hrp.Position).Magnitude
 
-        if ballSpeed >= CONFIG.MIN_BALL_SPEED then
-            local ballToGoalDir = (goalPos - ballPos).Unit
-            local ballMoveDir = ballVelocity.Unit
-            
-            -- Bóng hướng về khung thành
-            if ballMoveDir:Dot(ballToGoalDir) > 0.25 then
-                local predictedBallPos = ballPos + (ballVelocity * CONFIG.PREDICTION_TIME)
-                local distToGoal = (predictedBallPos - goalPos).Magnitude
-                
-                if distToGoal <= CONFIG.BALL_SAVE_DIST then
-                    local relPos = hrp.CFrame:PointToObjectSpace(predictedBallPos)
-                    local totalDistToKeeper = (predictedBallPos - hrp.Position).Magnitude
+            if totalDistToKeeper > CONFIG.CATCH_RADIUS then
+                local isLeft = relPos.X < -CONFIG.LEFT_RIGHT_THRESHOLD
+                local isRight = relPos.X > CONFIG.LEFT_RIGHT_THRESHOLD
+                local isHigh = relPos.Y > CONFIG.HIGH_SHOT_THRESHOLD
 
-                    if totalDistToKeeper > CONFIG.CATCH_RADIUS then
-                        local isLeft = relPos.X < -CONFIG.LEFT_RIGHT_THRESHOLD
-                        local isRight = relPos.X > CONFIG.LEFT_RIGHT_THRESHOLD
-                        
-                        -- Phân loại chiều cao chuẩn xác: Y > 2.2 mới tính là bóng cao
-                        local isHigh = relPos.Y > CONFIG.HIGH_SHOT_THRESHOLD
-
-                        if isLeft or isRight or isHigh then
-                            performSmartDive(predictedBallPos, isLeft, isRight, isHigh)
-                        end
-                    end
+                if isLeft or isRight or isHigh then
+                    performSmartDive(predictedBallPos, isLeft, isRight, isHigh)
                 end
             end
         end
