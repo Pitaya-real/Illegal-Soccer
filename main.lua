@@ -27,7 +27,8 @@ local CONFIG = {
     LEFT_RIGHT_THRESHOLD = 2.2,
     HIGH_SHOT_THRESHOLD = 3.0,
     CATCH_RADIUS = 3.8,
-    POSITIONING_DIST = 45
+    POSITIONING_DIST = 45,
+    MIN_BALL_SPEED = 8 -- Ngưỡng tốc độ bóng tối thiểu để kích hoạt Auto Save
 }
 
 local autoSaveEnabled = false
@@ -58,7 +59,7 @@ local Window = PitayaUI:CreateWindow({
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v4.1</b> Optimized"
+	LoadingTitle = "<b>Smart GK </b> Optimized"
 })
 
 -- ---------------------------------------------------------
@@ -676,22 +677,33 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- Auto Save & Smart Dive
-    if autoSaveEnabled and ballPos and goalPos then
-        local predictedBallPos = ballPos + (ballVelocity * CONFIG.PREDICTION_TIME)
-        local distToGoal = (predictedBallPos - goalPos).Magnitude
-        
-        if distToGoal <= CONFIG.BALL_SAVE_DIST and not isDiving then
-            local relPos = hrp.CFrame:PointToObjectSpace(predictedBallPos)
-            local totalDistToKeeper = (predictedBallPos - hrp.Position).Magnitude
+    -- Auto Save & Smart Dive (Chỉ kích hoạt khi bóng đủ nhanh và hướng về khung thành)
+    if autoSaveEnabled and ballPos and goalPos and not isDiving then
+        local ballSpeed = ballVelocity.Magnitude
 
-            if totalDistToKeeper > CONFIG.CATCH_RADIUS then
-                local isLeft = relPos.X < -CONFIG.LEFT_RIGHT_THRESHOLD
-                local isRight = relPos.X > CONFIG.LEFT_RIGHT_THRESHOLD
-                local isHigh = relPos.Y > CONFIG.HIGH_SHOT_THRESHOLD
+        -- 1. Kiểm tra tốc độ tối thiểu của bóng
+        if ballSpeed >= CONFIG.MIN_BALL_SPEED then
+            local ballToGoalDir = (goalPos - ballPos).Unit
+            local ballMoveDir = ballVelocity.Unit
+            
+            -- 2. Kiểm tra xem bóng có đang di chuyển về phía khung thành hay không (Tích vô hướng > 0.25)
+            if ballMoveDir:Dot(ballToGoalDir) > 0.25 then
+                local predictedBallPos = ballPos + (ballVelocity * CONFIG.PREDICTION_TIME)
+                local distToGoal = (predictedBallPos - goalPos).Magnitude
+                
+                if distToGoal <= CONFIG.BALL_SAVE_DIST then
+                    local relPos = hrp.CFrame:PointToObjectSpace(predictedBallPos)
+                    local totalDistToKeeper = (predictedBallPos - hrp.Position).Magnitude
 
-                if isLeft or isRight or isHigh then
-                    performSmartDive(predictedBallPos, isLeft, isRight, isHigh)
+                    if totalDistToKeeper > CONFIG.CATCH_RADIUS then
+                        local isLeft = relPos.X < -CONFIG.LEFT_RIGHT_THRESHOLD
+                        local isRight = relPos.X > CONFIG.LEFT_RIGHT_THRESHOLD
+                        local isHigh = relPos.Y > CONFIG.HIGH_SHOT_THRESHOLD
+
+                        if isLeft or isRight or isHigh then
+                            performSmartDive(predictedBallPos, isLeft, isRight, isHigh)
+                        end
+                    end
                 end
             end
         end
