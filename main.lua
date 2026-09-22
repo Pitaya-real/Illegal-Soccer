@@ -1,5 +1,5 @@
 -- =================================================================
--- SMART GK AUTO SAVE - PRACTICE & MATCH MODE (PRACTICE INTEGRATED)
+-- SMART GK AUTO SAVE v5.0 - DYNAMIC PHYSICS & LOW/HIGH SHOTS FIX
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
@@ -17,17 +17,18 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 -- ---------------------------------------------------------
--- CẤU HÌNH & BIẾN TOÀN CỤC CỦA HỆ THỐNG SMART GK
+-- CẤU HÌNH & BIẾN TOÀN CỤC CỦA HỆ THỐNG SMART GK v5.0
 -- ---------------------------------------------------------
 local CONFIG = {
     GOAL_DETECTION_DIST = 100,
-    BALL_SAVE_DIST = 32,
+    BALL_SAVE_DIST = 35,
     PREDICTION_TIME = 0.28,
-    COOLDOWN = 1.1,
-    LEFT_RIGHT_THRESHOLD = 2.2,
-    HIGH_SHOT_THRESHOLD = 3.0,
-    CATCH_RADIUS = 3.8,
-    POSITIONING_DIST = 45
+    COOLDOWN = 0.9,
+    LEFT_RIGHT_THRESHOLD = 1.5,
+    HIGH_SHOT_THRESHOLD = 2.2,    -- Độ cao Y > 2.2 tính là bóng cao
+    CATCH_RADIUS = 3.2,
+    POSITIONING_DIST = 45,
+    MIN_BALL_SPEED = 8            -- Phản xạ siêu tốc khi vận tốc bóng >= 8
 }
 
 local autoSaveEnabled = false
@@ -54,12 +55,12 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 -- 4. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
 -- ---------------------------------------------------------
 local Window = PitayaUI:CreateWindow({
-	Title = "Smart GK System | Practice Edition",
+	Title = "Smart GK System v5.0",
 	Logo = "rbxassetid://73866843639743",
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v4.4</b> Practice Supported"
+	LoadingTitle = "<b>Smart GK v5.0</b> Ultimate Physics Edition"
 })
 
 -- ---------------------------------------------------------
@@ -259,7 +260,7 @@ end)
 -- ---------------------------------------------------------
 -- 7. TAB TRÊN PITAYA UI
 -- ---------------------------------------------------------
-local GKTab = Window:CreateTab("Smart GK", "⚽")
+local GKTab = Window:CreateTab("Smart GK v5.0", "⚽")
 
 GKTab:AddLabel("--- Tự Động Thủ Môn ---", {BoldText = true})
 
@@ -508,40 +509,56 @@ local function getDefendingGoal()
     return closestGoal
 end
 
+-- =========================================================
+-- HÀM SMART DIVE v5.0: PHÂN TÁCH CHUẨN TRÌNH TỰ BẤM PHÍM
+-- =========================================================
 local function performSmartDive(predictedPos, isLeft, isRight, isHigh)
     if isDiving then return end
     isDiving = true
+    
     task.spawn(function()
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        
-        if hrp then
-            hrp.CFrame = CFrame.new(hrp.Position, Vector3.new(predictedPos.X, hrp.Position.Y, predictedPos.Z))
-        end
+        if not hrp then isDiving = false return end
 
-        if isHigh then
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-            task.wait(0.03)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-            task.wait(0.03)
-        end
+        -- Xoay mặt về hướng bóng
+        hrp.CFrame = CFrame.new(hrp.Position, Vector3.new(predictedPos.X, hrp.Position.Y, predictedPos.Z))
 
         local dirKey = nil
         if isLeft then dirKey = Enum.KeyCode.A
         elseif isRight then dirKey = Enum.KeyCode.D end
 
-        if dirKey then
-            VirtualInputManager:SendKeyEvent(true, dirKey, false, game)
-            task.wait(0.02)
-        end
-        
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0)
-        task.wait(0.05)
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0)
-        
-        if dirKey then
+        if isHigh then
+            -- BÓNG CAO: NHẢY (SPACE) TRƯỚC -> HƯỚNG (A/D) -> DIVE (E)
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+            task.wait(0.015)
+
+            if dirKey then
+                VirtualInputManager:SendKeyEvent(true, dirKey, false, game)
+            end
+            
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0)
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+            
             task.wait(0.03)
-            VirtualInputManager:SendKeyEvent(false, dirKey, false, game)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+            if dirKey then VirtualInputManager:SendKeyEvent(false, dirKey, false, game) end
+
+        else
+            -- BÓNG SỆT/THẤP: HƯỚNG (A/D) TRƯỚC -> DIVE (E) -> TUYỆT ĐỐI BỎ QUA SPACE
+            if dirKey then
+                VirtualInputManager:SendKeyEvent(true, dirKey, false, game)
+            end
+            
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0)
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+            
+            task.wait(0.03)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+            if dirKey then VirtualInputManager:SendKeyEvent(false, dirKey, false, game) end
         end
         
         task.wait(CONFIG.COOLDOWN)
@@ -679,7 +696,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ---------------------------------------------------------
--- 11. VÒNG LẶP RENDER STEPPED (ĐÃ SỬA BẮT BÓNG LINH HOẠT)
+-- 11. VÒNG LẶP RENDER STEPPED (SMART GK ENGINE v5.0)
 -- ---------------------------------------------------------
 RunService.RenderStepped:Connect(function(dt)
     local char = LocalPlayer.Character
@@ -735,31 +752,28 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- =========================================================
-    -- ĐÃ SỬA: AUTO SAVE & SMART DIVE (BẮT CHUẨN XÁC)
-    -- =========================================================
+    -- AUTO SAVE & SMART DIVE ENGINE v5.0
     if autoSaveEnabled and ballPos and goalPos and not isDiving then
         local ballSpeed = ballVelocity.Magnitude
 
-        -- LỌC 1: Bóng phải đang bay nhanh (Tốc độ >= 18 mới tính là cú sút, tránh bóng lăn chậm/dẫn bóng tự bay)
-        if ballSpeed >= 18 then
+        if ballSpeed >= CONFIG.MIN_BALL_SPEED then
             local ballToGoalDir = (goalPos - ballPos).Unit
             local ballMoveDir = ballVelocity.Unit
             
-            -- LỌC 2: Kiểm tra hướng bay của bóng có đang HƯỚNG VỀ KHUNG THÀNH hay không
-            if ballMoveDir:Dot(ballToGoalDir) > 0.3 then
+            -- Bóng hướng về khung thành
+            if ballMoveDir:Dot(ballToGoalDir) > 0.25 then
                 local predictedBallPos = ballPos + (ballVelocity * CONFIG.PREDICTION_TIME)
                 local distToGoal = (predictedBallPos - goalPos).Magnitude
                 
-                -- LỌC 3: Quỹ đạo nằm trong tầm nguy hiểm của khung thành
                 if distToGoal <= CONFIG.BALL_SAVE_DIST then
                     local relPos = hrp.CFrame:PointToObjectSpace(predictedBallPos)
                     local totalDistToKeeper = (predictedBallPos - hrp.Position).Magnitude
 
-                    -- Chỉ bay người khi bóng vượt ngoài tầm với đứng yên
                     if totalDistToKeeper > CONFIG.CATCH_RADIUS then
                         local isLeft = relPos.X < -CONFIG.LEFT_RIGHT_THRESHOLD
                         local isRight = relPos.X > CONFIG.LEFT_RIGHT_THRESHOLD
+                        
+                        -- Phân loại chiều cao chuẩn xác: Y > 2.2 mới tính là bóng cao
                         local isHigh = relPos.Y > CONFIG.HIGH_SHOT_THRESHOLD
 
                         if isLeft or isRight or isHigh then
