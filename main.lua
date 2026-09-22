@@ -1,5 +1,5 @@
 -- =================================================================
--- SMART GK AUTO SAVE - REAL MULTI-TOUCH & INDEPENDENT CAMERA TOUCH
+-- SMART GK AUTO SAVE - NATIVE BUTTONS & NO CAM LOCK ON JOYSTICK
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
@@ -53,16 +53,16 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 -- 4. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
 -- ---------------------------------------------------------
 local Window = PitayaUI:CreateWindow({
-	Title = "Smart GK System | Smooth Touch",
+	Title = "Smart GK System | Flexible Touch",
 	Logo = "rbxassetid://73866843639743",
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v4.0</b> Native Touch"
+	LoadingTitle = "<b>Smart GK v4.1</b> Optimized"
 })
 
 -- ---------------------------------------------------------
--- 5. CHÈN UI VÀO COREGUI / PLAYERGUI (BYPASS & TRÁNH BLOCK CAM)
+-- 5. CHÈN UI VÀO COREGUI / PLAYERGUI
 -- ---------------------------------------------------------
 local parentContainer
 if gethui then
@@ -91,14 +91,11 @@ if not isMobile then
 end
 
 -- ---------------------------------------------------------
--- 6. HỆ THỐNG NÚT BẤM VÀ JOYSTICK CẢM ỨNG NATIVE MULTI-TOUCH
+-- 6. TẠO CÁC NÚT BẤM CẢM ỨNG ĐỘC LẬP (KHÔNG KHÓA CAM)
 -- ---------------------------------------------------------
 
 local touchRegistry = {}
-local moveVector = Vector2.zero
-local joystickTouchObject = nil
 
--- Nút bấm Native (Không ngắt vuốt màn hình)
 local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onRelease)
     local btn = Instance.new("Frame")
     btn.Name = name
@@ -142,7 +139,7 @@ local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onR
     return btn
 end
 
--- Xử lý giải phóng Touch linh hoạt cho toàn bộ các nút
+-- Giải phóng phím bấm mượt mà
 UserInputService.InputEnded:Connect(function(input)
     if touchRegistry[input] then
         local data = touchRegistry[input]
@@ -151,7 +148,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Nút Shift
+-- Nút Shift (Chạy nhanh)
 createSeamlessButton("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(200, 100, 30), 
     function(btn)
         isSprinting = not isSprinting
@@ -184,7 +181,10 @@ createSeamlessButton("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.n
     function() VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0) end
 )
 
--- JOYSTICK NATIVE (LƯU VỊ TRÍ MỐI CẢM ỨNG RIÊNG)
+-- JOYSTICK THUẦN DI CHUYỂN
+local moveVector = Vector2.zero
+local joystickTouchObject = nil
+
 local TouchBase = Instance.new("Frame")
 TouchBase.Name = "JoystickBase"
 TouchBase.Size = UDim2.new(0, 130, 0, 130)
@@ -288,7 +288,7 @@ GKTab:AddToggle({
 	end
 })
 
--- TAB VISUALS (ESP GỌN GÀNG)
+-- TAB VISUALS
 local VisualTab = Window:CreateTab("Hiển Thị", "👁️")
 
 VisualTab:AddLabel("--- ESP Tinh Gọn (Minimalist) ---", {BoldText = true})
@@ -481,7 +481,7 @@ local function performSmartDive(predictedPos, isLeft, isRight, isHigh)
 end
 
 -- ---------------------------------------------------------
--- 10. HỆ THỐNG ESP MINIMALIST (SIÊU NHỎ GỌN)
+-- 10. HỆ THỐNG ESP MINIMALIST
 -- ---------------------------------------------------------
 
 local function createCleanPlayerESP(player)
@@ -613,14 +613,14 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ---------------------------------------------------------
--- 11. VÒNG LẶP RENDER STEPPED (XỬ LÝ MOVEMENT & GAMEPLAY)
+-- 11. VÒNG LẶP RENDER STEPPED (DI CHUYỂN & LOGIC GK)
 -- ---------------------------------------------------------
 RunService.RenderStepped:Connect(function(dt)
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-    -- Di chuyển bằng Joystick mượt mà
+    -- Di chuyển bằng Joystick dựa theo hướng nhìn của Camera
     if isMobile and mobileControlsEnabled and joystickTouchObject and moveVector.Magnitude > 0.05 and hum then
         local camCFrame = Camera.CFrame
         local forward = camCFrame.LookVector
@@ -647,7 +647,7 @@ RunService.RenderStepped:Connect(function(dt)
     lastBallPos = ballPos
     lastBallTime = now
 
-    -- Cam Lock Ball
+    -- Cam Lock Ball (Chỉ hoạt động khi bật Toggle Cam Lock trong Pitaya UI)
     if cameraTrackEnabled and ballPos then
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, ballPos)
     end
