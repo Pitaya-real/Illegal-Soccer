@@ -1,5 +1,5 @@
 -- =================================================================
--- SMART GK AUTO SAVE - MULTI-TOUCH MOBILE CONTROLS & AUTO DEVICE DETECT
+-- SMART GK AUTO SAVE - REAL MULTI-TOUCH & INDEPENDENT CAMERA TOUCH
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
@@ -53,16 +53,16 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 -- 4. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
 -- ---------------------------------------------------------
 local Window = PitayaUI:CreateWindow({
-	Title = "Smart GK System | Multi-Touch Mobile",
+	Title = "Smart GK System | Smooth Touch",
 	Logo = "rbxassetid://73866843639743",
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v3.5</b> Advanced Controls"
+	LoadingTitle = "<b>Smart GK v4.0</b> Native Touch"
 })
 
 -- ---------------------------------------------------------
--- 5. CHÈN UI VÀO COREGUI / PLAYERGUI (BYPASS)
+-- 5. CHÈN UI VÀO COREGUI / PLAYERGUI (BYPASS & TRÁNH BLOCK CAM)
 -- ---------------------------------------------------------
 local parentContainer
 if gethui then
@@ -86,29 +86,27 @@ MobileControlsGui.ResetOnSpawn = false
 MobileControlsGui.DisplayOrder = 9999
 MobileControlsGui.Parent = parentContainer
 
--- Nếu là PC thì ẩn hẳn GUI điều khiển ảo
 if not isMobile then
     MobileControlsGui.Enabled = false
 end
 
 -- ---------------------------------------------------------
--- 6. TẠO CÁC NÚT ĐIỀU KHIỂN MULTI-TOUCH LINH HOẠT
+-- 6. HỆ THỐNG NÚT BẤM VÀ JOYSTICK CẢM ỨNG NATIVE MULTI-TOUCH
 -- ---------------------------------------------------------
-local activeTouches = {}
 
-local function createMultiTouchButton(name, text, pos, size, bgColor, onPress, onRelease)
-    local btn = Instance.new("TextButton")
+local touchRegistry = {}
+local moveVector = Vector2.zero
+local joystickTouchObject = nil
+
+-- Nút bấm Native (Không ngắt vuốt màn hình)
+local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onRelease)
+    local btn = Instance.new("Frame")
     btn.Name = name
     btn.Size = size
     btn.Position = pos
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 13
-    btn.Font = Enum.Font.SourceSansBold
     btn.BackgroundColor3 = bgColor
-    btn.BackgroundTransparency = 0.25
+    btn.BackgroundTransparency = 0.3
     btn.ZIndex = 60
-    btn.Active = true
     btn.Parent = MobileControlsGui
 
     local corner = Instance.new("UICorner")
@@ -121,32 +119,40 @@ local function createMultiTouchButton(name, text, pos, size, bgColor, onPress, o
     stroke.Transparency = 0.3
     stroke.Parent = btn
 
-    local btnTouchObj = nil
+    local txtLabel = Instance.new("TextLabel")
+    txtLabel.Size = UDim2.new(1, 0, 1, 0)
+    txtLabel.BackgroundTransparency = 1
+    txtLabel.Text = text
+    txtLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    txtLabel.TextSize = 13
+    txtLabel.Font = Enum.Font.SourceSansBold
+    txtLabel.ZIndex = 61
+    txtLabel.Parent = btn
 
     btn.InputBegan:Connect(function(input)
-        if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) and not btnTouchObj then
-            btnTouchObj = input
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            touchRegistry[input] = {
+                btn = btn,
+                onRelease = onRelease
+            }
             if onPress then onPress(btn) end
         end
-    end)
-
-    local function handleEnded(input)
-        if input == btnTouchObj or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            btnTouchObj = nil
-            if onRelease then onRelease(btn) end
-        end
-    end
-
-    btn.InputEnded:Connect(handleEnded)
-    UserInputService.InputEnded:Connect(function(input)
-        if input == btnTouchObj then handleEnded(input) end
     end)
 
     return btn
 end
 
--- Nút Shift (Chạy Nhanh)
-createMultiTouchButton("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(200, 100, 30), 
+-- Xử lý giải phóng Touch linh hoạt cho toàn bộ các nút
+UserInputService.InputEnded:Connect(function(input)
+    if touchRegistry[input] then
+        local data = touchRegistry[input]
+        if data.onRelease then data.onRelease(data.btn) end
+        touchRegistry[input] = nil
+    end
+end)
+
+-- Nút Shift
+createSeamlessButton("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(200, 100, 30), 
     function(btn)
         isSprinting = not isSprinting
         btn.BackgroundColor3 = isSprinting and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(200, 100, 30)
@@ -155,39 +161,37 @@ createMultiTouchButton("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.n
 )
 
 -- Nút Nhảy
-createMultiTouchButton("JumpBtn", "Nhảy", UDim2.new(0.85, 0, 0.65, 0), UDim2.new(0, 68, 0, 68), Color3.fromRGB(40, 40, 40),
+createSeamlessButton("JumpBtn", "Nhảy", UDim2.new(0.85, 0, 0.65, 0), UDim2.new(0, 68, 0, 68), Color3.fromRGB(40, 40, 40),
     function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game) end,
     function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end
 )
 
 -- Nút Bay người
-createMultiTouchButton("DiveBtn", "Bay người", UDim2.new(0.72, 0, 0.68, 0), UDim2.new(0, 64, 0, 64), Color3.fromRGB(30, 30, 30),
+createSeamlessButton("DiveBtn", "Bay người", UDim2.new(0.72, 0, 0.68, 0), UDim2.new(0, 64, 0, 64), Color3.fromRGB(30, 30, 30),
     function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game) end,
     function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game) end
 )
 
 -- Nút Sút
-createMultiTouchButton("ShootBtn", "Sút", UDim2.new(0.74, 0, 0.45, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30),
+createSeamlessButton("ShootBtn", "Sút", UDim2.new(0.74, 0, 0.45, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30),
     function() VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0) end,
     function() VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0) end
 )
 
 -- Nút Chuyền
-createMultiTouchButton("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30),
+createSeamlessButton("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30),
     function() VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0) end,
     function() VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0) end
 )
 
--- JOYSTICK LINH HOẠT KHÔNG LÀM KHỰNG TÁC VỤ KHÁC
-local TouchBase = Instance.new("TextButton")
+-- JOYSTICK NATIVE (LƯU VỊ TRÍ MỐI CẢM ỨNG RIÊNG)
+local TouchBase = Instance.new("Frame")
 TouchBase.Name = "JoystickBase"
 TouchBase.Size = UDim2.new(0, 130, 0, 130)
 TouchBase.Position = UDim2.new(0.05, 0, 0.52, 0)
 TouchBase.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-TouchBase.BackgroundTransparency = 0.4
-TouchBase.Text = ""
+TouchBase.BackgroundTransparency = 0.5
 TouchBase.ZIndex = 60
-TouchBase.Active = true
 TouchBase.Parent = MobileControlsGui
 
 local BaseCorner = Instance.new("UICorner")
@@ -212,9 +216,6 @@ Thumb.Parent = TouchBase
 local ThumbCorner = Instance.new("UICorner")
 ThumbCorner.CornerRadius = UDim.new(1, 0)
 ThumbCorner.Parent = Thumb
-
-local moveVector = Vector2.zero
-local joystickTouchObject = nil
 
 local function resetJoystick()
     joystickTouchObject = nil
