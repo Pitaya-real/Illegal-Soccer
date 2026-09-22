@@ -59,7 +59,7 @@ local Window = PitayaUI:CreateWindow({
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v4.2</b> Practice Supported"
+	LoadingTitle = "<b>Smart GK v4.4</b> Practice Supported"
 })
 
 -- ---------------------------------------------------------
