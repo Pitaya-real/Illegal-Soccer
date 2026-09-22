@@ -1,5 +1,5 @@
 -- =================================================================
--- SMART GK AUTO SAVE - ISOLATED JOYSTICK (NO CAM ROTATION)
+-- SMART GK AUTO SAVE - PRACTICE & MATCH MODE (PRACTICE INTEGRATED)
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
@@ -20,7 +20,7 @@ local Camera = Workspace.CurrentCamera
 -- CẤU HÌNH & BIẾN TOÀN CỤC CỦA HỆ THỐNG SMART GK
 -- ---------------------------------------------------------
 local CONFIG = {
-    GOAL_DETECTION_DIST = 70,
+    GOAL_DETECTION_DIST = 100,
     BALL_SAVE_DIST = 32,
     PREDICTION_TIME = 0.28,
     COOLDOWN = 1.1,
@@ -36,6 +36,7 @@ local autoPositionEnabled = false
 local mobileControlsEnabled = true
 local espBallEnabled = false
 local espPlayersEnabled = false
+local practiceModeEnabled = false -- TÍNH NĂNG MỚI: CHẾ ĐỘ TẬP LUYỆN
 
 local isDiving = false
 local isSprinting = false
@@ -53,12 +54,12 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 -- 4. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
 -- ---------------------------------------------------------
 local Window = PitayaUI:CreateWindow({
-	Title = "Smart GK System | Flexible Touch",
+	Title = "Smart GK System | Practice Edition",
 	Logo = "rbxassetid://73866843639743",
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v4.1</b> Optimized"
+	LoadingTitle = "<b>Smart GK v4.2</b> Practice Supported"
 })
 
 -- ---------------------------------------------------------
@@ -91,7 +92,7 @@ if not isMobile then
 end
 
 -- ---------------------------------------------------------
--- 6. TẠO CÁC NÚT BẤM CẢM ỨNG ĐỘC LẬP (LINH HOẠT VỪA BẤM VỪA XOAY CAM)
+-- 6. TẠO CÁC NÚT BẤM CẢM ỨNG ĐỘC LẬP
 -- ---------------------------------------------------------
 
 local touchRegistry = {}
@@ -139,7 +140,6 @@ local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onR
     return btn
 end
 
--- Giải phóng phím bấm mượt mà
 UserInputService.InputEnded:Connect(function(input)
     if touchRegistry[input] then
         local data = touchRegistry[input]
@@ -182,12 +182,12 @@ createSeamlessButton("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.n
 )
 
 -- ---------------------------------------------------------
--- JOYSTICK BIẾN THÀNH IMAGEBUTTON ĐỂ CHẶN RIÊNG XOAY CAMERA
+-- JOYSTICK CHẶN XOAY CAMERA
 -- ---------------------------------------------------------
 local moveVector = Vector2.zero
 local joystickTouchObject = nil
 
-local TouchBase = Instance.new("ImageButton") -- Đổi thành ImageButton để dùng thuộc tính Modal
+local TouchBase = Instance.new("ImageButton")
 TouchBase.Name = "JoystickBase"
 TouchBase.Size = UDim2.new(0, 130, 0, 130)
 TouchBase.Position = UDim2.new(0.05, 0, 0.52, 0)
@@ -195,7 +195,7 @@ TouchBase.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 TouchBase.BackgroundTransparency = 0.5
 TouchBase.ZIndex = 60
 TouchBase.Active = true
-TouchBase.Modal = true -- KHÓA RIÊNG VÙNG NÀY KHÔNG CHO XOAY CAMERA
+TouchBase.Modal = true
 TouchBase.AutoButtonColor = false
 TouchBase.Image = ""
 TouchBase.Parent = MobileControlsGui
@@ -263,6 +263,16 @@ end)
 local GKTab = Window:CreateTab("Smart GK", "⚽")
 
 GKTab:AddLabel("--- Tự Động Thủ Môn ---", {BoldText = true})
+
+GKTab:AddToggle({
+	Text = "Chế Độ Tập Luyện (Practice Mode)",
+	BoldText = true,
+	Default = false,
+	Callback = function(state)
+		practiceModeEnabled = state
+		Window:Notify("Smart GK", "Chế độ tập luyện: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
+	end
+})
 
 GKTab:AddToggle({
 	Text = "Tự Động Bắt Bóng (Auto Save)",
@@ -371,7 +381,7 @@ task.spawn(function()
 end)
 
 -- ---------------------------------------------------------
--- 9. HÀM HỖ TRỢ GAMEPLAY & PHÂN TEAM CHUẨN
+-- 9. HÀM HỖ TRỢ BẮT BÓNG TẬP VÀ KHUNG THÀNH TẬP
 -- ---------------------------------------------------------
 local function getPosition(inst)
     if not inst then return nil end
@@ -382,18 +392,57 @@ local function getPosition(inst)
     return nil
 end
 
+-- Quét bóng trong cả Đấu thật lẫn Sân tập
 local function getBall()
+    local char = LocalPlayer.Character
+    local hrpPos = char and char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.Position
+
+    -- Ưu tiên tìm bóng tập luyện nếu bật Practice Mode
+    if practiceModeEnabled then
+        local foundBalls = {}
+        local searchFolders = {
+            Workspace:FindFirstChild("Misc"),
+            Workspace:FindFirstChild("Lobby") and Workspace.Lobby:FindFirstChild("Misc")
+        }
+
+        for _, parentFolder in ipairs(searchFolders) do
+            if parentFolder then
+                local visuals = parentFolder:FindFirstChild("Visuals")
+                if visuals then
+                    for _, child in ipairs(visuals:GetChildren()) do
+                        if child.Name:find("ClientBall_Practice") then
+                            table.insert(foundBalls, child)
+                        end
+                    end
+                end
+            end
+        end
+
+        if #foundBalls > 0 then
+            if not hrpPos then return foundBalls[1] end
+            local closestBall = nil
+            local shortestDist = math.huge
+            for _, b in ipairs(foundBalls) do
+                local bPos = getPosition(b)
+                if bPos then
+                    local dist = (bPos - hrpPos).Magnitude
+                    if dist < shortestDist then
+                        shortestDist = dist
+                        closestBall = b
+                    end
+                end
+            end
+            return closestBall
+        end
+    end
+
+    -- Tìm bóng trận đấu chính (ClientBall_MainMatch)
     local misc = Workspace:FindFirstChild("Misc")
     if misc then
         local visuals = misc:FindFirstChild("Visuals")
         if visuals then
             local mainBall = visuals:FindFirstChild("ClientBall_MainMatch")
-            if mainBall then
-                if mainBall:IsA("BasePart") then return mainBall end
-                if mainBall:IsA("Model") then
-                    return mainBall.PrimaryPart or mainBall:FindFirstChildWhichIsA("BasePart") or mainBall
-                end
-            end
+            if mainBall then return mainBall end
             return visuals:FindFirstChildWhichIsA("BasePart")
         end
     end
@@ -416,11 +465,32 @@ local function getPlayerTeam(player)
     return "NoTeam"
 end
 
+-- Quét khung thành đấu thật hoặc sân tập
 local function getDefendingGoal()
     local char = LocalPlayer.Character
     if not char then return nil end
     local hrpPos = getPosition(char:FindFirstChild("HumanoidRootPart"))
     if not hrpPos then return nil end
+
+    -- 1. Nếu bật Practice Mode: Tìm khung thành trong Lobby.Practice.Goals
+    if practiceModeEnabled then
+        local lobby = Workspace:FindFirstChild("Lobby")
+        if lobby then
+            local practice = lobby:FindFirstChild("Practice")
+            if practice then
+                local goalsFolder = practice:FindFirstChild("Goals")
+                if goalsFolder then
+                    local defence = goalsFolder:FindFirstChild("Defence")
+                    if defence then
+                        local goalMesh = defence:FindFirstChild("GoalMesh") or defence:FindFirstChild("Goal")
+                        if goalMesh then return goalMesh end
+                    end
+                end
+            end
+        end
+    end
+
+    -- 2. Tìm khung thành trong Trận Đấu Chính (Map.Data)
     local map = Workspace:FindFirstChild("Map")
     if not map or not map:FindFirstChild("Data") then return nil end
     
@@ -626,7 +696,7 @@ RunService.RenderStepped:Connect(function(dt)
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-    -- Di chuyển bằng Joystick dựa theo hướng nhìn của Camera
+    -- Di chuyển bằng Joystick
     if isMobile and mobileControlsEnabled and joystickTouchObject and moveVector.Magnitude > 0.05 and hum then
         local camCFrame = Camera.CFrame
         local forward = camCFrame.LookVector
@@ -653,7 +723,7 @@ RunService.RenderStepped:Connect(function(dt)
     lastBallPos = ballPos
     lastBallTime = now
 
-    -- Cam Lock Ball (Chỉ hoạt động khi bật Toggle Cam Lock trong Pitaya UI)
+    -- Cam Lock Ball
     if cameraTrackEnabled and ballPos then
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, ballPos)
     end
