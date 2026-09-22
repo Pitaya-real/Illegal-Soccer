@@ -1,5 +1,5 @@
 -- =================================================================
--- SMART GK AUTO SAVE - NATIVE BUTTONS & NO CAM LOCK ON JOYSTICK
+-- SMART GK AUTO SAVE - FIX JOYSTICK CAMERA ROTATION ISSUE
 -- =================================================================
 
 -- 1. LOAD THƯ VIỆN PITAYA UI
@@ -17,7 +17,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 -- ---------------------------------------------------------
--- CẤU HÌNH & BIẾN TOÀN CỤC CỦA HỆ THỐNG SMART GK
+-- CẤU HÌNH & BIẾN TOÀN CỤC
 -- ---------------------------------------------------------
 local CONFIG = {
     GOAL_DETECTION_DIST = 70,
@@ -53,12 +53,12 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 -- 4. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
 -- ---------------------------------------------------------
 local Window = PitayaUI:CreateWindow({
-	Title = "Smart GK System | Flexible Touch",
+	Title = "Smart GK System | No Cam Drift",
 	Logo = "rbxassetid://73866843639743",
 	Theme = "PitayaUI",
 	Font = "Gotham",
 	Loading = true,
-	LoadingTitle = "<b>Smart GK v4.1</b> Optimized"
+	LoadingTitle = "<b>Smart GK v4.2</b> Fixed Touch"
 })
 
 -- ---------------------------------------------------------
@@ -91,19 +91,25 @@ if not isMobile then
 end
 
 -- ---------------------------------------------------------
--- 6. TẠO CÁC NÚT BẤM CẢM ỨNG ĐỘC LẬP (KHÔNG KHÓA CAM)
+-- 6. TẠO CÁC NÚT BẤM BÊN PHẢI (CHẮN CLICK SANG CAM)
 -- ---------------------------------------------------------
 
 local touchRegistry = {}
 
 local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onRelease)
-    local btn = Instance.new("Frame")
+    local btn = Instance.new("TextButton")
     btn.Name = name
     btn.Size = size
     btn.Position = pos
     btn.BackgroundColor3 = bgColor
     btn.BackgroundTransparency = 0.3
     btn.ZIndex = 60
+    btn.AutoButtonColor = false
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 13
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Active = true
     btn.Parent = MobileControlsGui
 
     local corner = Instance.new("UICorner")
@@ -115,16 +121,6 @@ local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onR
     stroke.Thickness = 2
     stroke.Transparency = 0.3
     stroke.Parent = btn
-
-    local txtLabel = Instance.new("TextLabel")
-    txtLabel.Size = UDim2.new(1, 0, 1, 0)
-    txtLabel.BackgroundTransparency = 1
-    txtLabel.Text = text
-    txtLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    txtLabel.TextSize = 13
-    txtLabel.Font = Enum.Font.SourceSansBold
-    txtLabel.ZIndex = 61
-    txtLabel.Parent = btn
 
     btn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -139,7 +135,6 @@ local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onR
     return btn
 end
 
--- Giải phóng phím bấm mượt mà
 UserInputService.InputEnded:Connect(function(input)
     if touchRegistry[input] then
         local data = touchRegistry[input]
@@ -148,7 +143,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Nút Shift (Chạy nhanh)
+-- Nút Shift
 createSeamlessButton("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(200, 100, 30), 
     function(btn)
         isSprinting = not isSprinting
@@ -181,17 +176,22 @@ createSeamlessButton("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.n
     function() VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0) end
 )
 
--- JOYSTICK THUẦN DI CHUYỂN
+-- ---------------------------------------------------------
+-- JOYSTICK CHỐNG BỊ XOAY CAMERA (ISOLATED INPUT)
+-- ---------------------------------------------------------
 local moveVector = Vector2.zero
 local joystickTouchObject = nil
 
-local TouchBase = Instance.new("Frame")
+local TouchBase = Instance.new("ImageButton")
 TouchBase.Name = "JoystickBase"
-TouchBase.Size = UDim2.new(0, 130, 0, 130)
-TouchBase.Position = UDim2.new(0.05, 0, 0.52, 0)
+TouchBase.Size = UDim2.new(0, 140, 0, 140)
+TouchBase.Position = UDim2.new(0.05, 0, 0.50, 0)
 TouchBase.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 TouchBase.BackgroundTransparency = 0.5
 TouchBase.ZIndex = 60
+TouchBase.Active = true -- Khóa không cho sự kiện chạm xuyên xuống Camera
+TouchBase.AutoButtonColor = false
+TouchBase.Image = ""
 TouchBase.Parent = MobileControlsGui
 
 local BaseCorner = Instance.new("UICorner")
@@ -206,8 +206,8 @@ BaseStroke.Parent = TouchBase
 
 local Thumb = Instance.new("Frame")
 Thumb.Name = "JoystickThumb"
-Thumb.Size = UDim2.new(0, 50, 0, 50)
-Thumb.Position = UDim2.new(0.5, -25, 0.5, -25)
+Thumb.Size = UDim2.new(0, 54, 0, 54)
+Thumb.Position = UDim2.new(0.5, -27, 0.5, -27)
 Thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 Thumb.BackgroundTransparency = 0.2
 Thumb.ZIndex = 61
@@ -220,7 +220,7 @@ ThumbCorner.Parent = Thumb
 local function resetJoystick()
     joystickTouchObject = nil
     moveVector = Vector2.zero
-    Thumb.Position = UDim2.new(0.5, -25, 0.5, -25)
+    Thumb.Position = UDim2.new(0.5, -27, 0.5, -27)
 end
 
 TouchBase.InputBegan:Connect(function(input)
@@ -230,7 +230,7 @@ TouchBase.InputBegan:Connect(function(input)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if joystickTouchObject and (input == joystickTouchObject or input.UserInputType == Enum.UserInputType.MouseMovement) then
+    if joystickTouchObject and input == joystickTouchObject then
         local baseCenter = TouchBase.AbsolutePosition + (TouchBase.AbsoluteSize / 2)
         local inputPos = Vector2.new(input.Position.X, input.Position.Y)
         local delta = inputPos - baseCenter
@@ -240,13 +240,13 @@ UserInputService.InputChanged:Connect(function(input)
             delta = delta.Unit * radius
         end
 
-        Thumb.Position = UDim2.new(0.5, delta.X - 25, 0.5, delta.Y - 25)
+        Thumb.Position = UDim2.new(0.5, delta.X - 27, 0.5, delta.Y - 27)
         moveVector = delta / radius
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input == joystickTouchObject or input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input == joystickTouchObject then
         resetJoystick()
     end
 end)
@@ -365,7 +365,7 @@ task.spawn(function()
 end)
 
 -- ---------------------------------------------------------
--- 9. HÀM HỖ TRỢ GAMEPLAY & PHÂN TEAM CHUẨN
+-- 9. HÀM HỖ TRỢ GAMEPLAY & PHÂN TEAM
 -- ---------------------------------------------------------
 local function getPosition(inst)
     if not inst then return nil end
@@ -613,14 +613,14 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ---------------------------------------------------------
--- 11. VÒNG LẶP RENDER STEPPED (DI CHUYỂN & LOGIC GK)
+-- 11. VÒNG LẶP DI CHUYỂN & LOGIC GK
 -- ---------------------------------------------------------
 RunService.RenderStepped:Connect(function(dt)
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-    -- Di chuyển bằng Joystick dựa theo hướng nhìn của Camera
+    -- Di chuyển bằng Joystick độc lập
     if isMobile and mobileControlsEnabled and joystickTouchObject and moveVector.Magnitude > 0.05 and hum then
         local camCFrame = Camera.CFrame
         local forward = camCFrame.LookVector
@@ -633,7 +633,7 @@ RunService.RenderStepped:Connect(function(dt)
         hum:Move(moveDirection, false)
     end
 
-    -- Quỹ đạo bóng
+    -- Tính vận tốc bóng
     local ball = getBall()
     local ballPos = getPosition(ball)
     local now = tick()
@@ -647,7 +647,7 @@ RunService.RenderStepped:Connect(function(dt)
     lastBallPos = ballPos
     lastBallTime = now
 
-    -- Cam Lock Ball (Chỉ hoạt động khi bật Toggle Cam Lock trong Pitaya UI)
+    -- Cam Lock Ball (Chỉ bật khi chọn toggle)
     if cameraTrackEnabled and ballPos then
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, ballPos)
     end
@@ -657,7 +657,7 @@ RunService.RenderStepped:Connect(function(dt)
     local goal = getDefendingGoal()
     local goalPos = goal and getPosition(goal)
 
-    -- Auto Positioning
+    -- Auto Position
     if autoPositionEnabled and ballPos and goalPos and not joystickTouchObject and not isDiving then
         local distBallToGoal = (ballPos - goalPos).Magnitude
         if distBallToGoal <= CONFIG.POSITIONING_DIST then
@@ -670,7 +670,7 @@ RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- Auto Save & Smart Dive
+    -- Auto Save
     if autoSaveEnabled and ballPos and goalPos then
         local predictedBallPos = ballPos + (ballVelocity * CONFIG.PREDICTION_TIME)
         local distToGoal = (predictedBallPos - goalPos).Magnitude
