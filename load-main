@@ -9,5 +9,284 @@
 
 ]]--
 
-local v0=game:GetService("HttpService");local v1=game:GetService("Players");local v2=game:GetService("TweenService");local v3=game:GetService("UserInputService");local v4=v1.LocalPlayer;local v5="https://my-key-system-eyd6.onrender.com";local v6="https://link4m.co/st?api=6ab403116930ce4d991e5e9b&url=";local v7=game:GetService("RbxAnalyticsService"):GetClientId();local v8="Pitaya_Key.dat";local v9=writefile or (syn and syn.writefile) ;local v10=readfile or (syn and syn.readfile) ;local v11=isfile or (syn and syn.isfile) ;local function v12(v144) local v145={};for v171=1 + 0 , #v144 do local v172=string.byte(v7,((v171-(1 -0))% #v7) + 1 + 0 );local v173=string.byte(v144,v171);table.insert(v145,string.format("%02X",bit32.bxor(v173,v172)));end return table.concat(v145);end local function v13(v146) local v147={};for v174=1 -0 , #v146,2 do local v175=0 + 0 ;local v176;local v177;while true do if (v175==(791 -(368 + 423))) then v176=string.sub(v146,v174,v174 + (3 -2) );v177=tonumber(v176,34 -(10 + 8) );v175=3 -2 ;end if (v175==(443 -(416 + 26))) then if v177 then local v191=string.byte(v7,((((v174 + 1)/(6 -4)) -1)% #v7) + 1 + 0 );table.insert(v147,string.char(bit32.bxor(v177,v191)));end break;end end end return table.concat(v147);end local v14=false;if (v11 and v11(v8)) then local v178=0 -0 ;local v179;local v180;while true do if (v178==(438 -(145 + 293))) then v179,v180=pcall(v10,v8);if (v179 and (v180~="")) then local v192=430 -(44 + 386) ;local v193;local v194;while true do if (v192==1) then if (v194 and (v193~="")) then local v206=0;local v207;local v208;while true do if (v206==(1486 -(998 + 488))) then v207,v208=pcall(function() return v194({Url=v5   .. "/verify?hwid="   .. v7   .. "&key="   .. v193 ,Method="GET"});end);if (v207 and v208 and v208.Body) then local v215=0;local v216;local v217;while true do if (v215==(0 + 0)) then v216,v217=pcall(function() return v0:JSONDecode(v208.Body);end);if (v216 and v217 and (v217.status=="success") and v217.scriptUrl) then local v218=0 + 0 ;while true do if (v218==(773 -(201 + 571))) then task.wait(1138.5 -(116 + 1022) );loadstring(game:HttpGet(v217.scriptUrl))();break;end if (v218==(0 -0)) then v14=true;game:GetService("StarterGui"):SetCore("SendNotification",{Title="Pitaya Hub",Text="✅ Auto-Key thành công! Đang tải Script...",Duration=3});v218=1 + 0 ;end end end break;end end end break;end end end break;end if (v192==(0 -0)) then v193=v13(v180);v194=http_request or request or (syn and syn.request) or (fluxus and fluxus.request) ;v192=3 -2 ;end end end break;end end end if v14 then return;end local v15=v4:WaitForChild("PlayerGui");if v15:FindFirstChild("KeySystemGui") then v15.KeySystemGui:Destroy();end local v16=Instance.new("ScreenGui");v16.Name="KeySystemGui";v16.Parent=v15;v16.ResetOnSpawn=false;v16.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;local v22=Instance.new("Frame");v22.Name="MainFrame";v22.Size=UDim2.new(859 -(814 + 45) ,1034 -614 ,0 + 0 ,96 + 174 );v22.Position=UDim2.new(0.5, -210,885.5 -(261 + 624) , -135);v22.BackgroundColor3=Color3.fromRGB(26 -11 ,1098 -(1020 + 60) ,1449 -(630 + 793) );v22.BackgroundTransparency=0.1;v22.BorderSizePixel=0;v22.ClipsDescendants=true;v22.Parent=v16;local v31=Instance.new("UICorner");v31.CornerRadius=UDim.new(0 -0 ,85 -67 );v31.Parent=v22;local v34=Instance.new("UIStroke");v34.ApplyStrokeMode=Enum.ApplyStrokeMode.Border;v34.Color=Color3.fromRGB(101 + 154 ,877 -622 ,255);v34.Transparency=0.88;v34.Thickness=1.5;v34.Parent=v22;local v41=Instance.new("UIGradient");v41.Color=ColorSequence.new({ColorSequenceKeypoint.new(1747 -(760 + 987) ,Color3.fromRGB(1935 -(1789 + 124) ,27,804 -(745 + 21) )),ColorSequenceKeypoint.new(1,Color3.fromRGB(27 -17 ,46 -34 ,1 + 17 ))});v41.Rotation=36 + 9 ;v41.Parent=v22;local v45=Instance.new("TextLabel");v45.Name="Title";v45.Size=UDim2.new(1056 -(87 + 968) ,0 -0 ,0 + 0 ,108 -60 );v45.Position=UDim2.new(1413 -(447 + 966) ,0,0 -0 ,1827 -(1703 + 114) );v45.BackgroundTransparency=702 -(376 + 325) ;v45.Text="PITAYA HUB - KEY SYSTEM";v45.TextColor3=Color3.fromRGB(255,417 -162 ,255);v45.TextSize=48 -32 ;v45.Font=Enum.Font.GothamBold;v45.Parent=v22;local v56=Instance.new("TextLabel");v56.Name="SubTitle";v56.Size=UDim2.new(1 + 0 ,0 -0 ,0,20);v56.Position=UDim2.new(14 -(9 + 5) ,376 -(85 + 291) ,0,1301 -(243 + 1022) );v56.BackgroundTransparency=3 -2 ;v56.Text="Xác thực Key 24h để kích hoạt Script";v56.TextColor3=Color3.fromRGB(148,135 + 28 ,1364 -(1123 + 57) );v56.TextSize=10 + 2 ;v56.Font=Enum.Font.Gotham;v56.Parent=v22;local v67=Instance.new("Frame");v67.Size=UDim2.new(254.86 -(163 + 91) ,1930 -(1869 + 61) ,0 + 0 ,46);v67.Position=UDim2.new(0.07,0 -0 ,0,72);v67.BackgroundColor3=Color3.fromRGB(23 -8 ,19,28);v67.BorderSizePixel=0 + 0 ;v67.Parent=v22;local v73=Instance.new("UICorner");v73.CornerRadius=UDim.new(0 -0 ,12 + 0 );v73.Parent=v67;local v76=Instance.new("UIStroke");v76.Color=Color3.fromRGB(46,1678 -(1329 + 145) ,1084 -(140 + 831) );v76.Transparency=0.7;v76.Thickness=1851 -(1409 + 441) ;v76.Parent=v67;local v81=Instance.new("TextBox");v81.Size=UDim2.new(719 -(15 + 703) , -20,1 + 0 ,0);v81.Position=UDim2.new(438 -(262 + 176) ,1731 -(345 + 1376) ,688 -(198 + 490) ,0 -0 );v81.BackgroundTransparency=2 -1 ;v81.TextColor3=Color3.fromRGB(1252 -(696 + 510) ,427 -223 ,113);v81.PlaceholderText="Nhập Key vào đây...";v81.PlaceholderColor3=Color3.fromRGB(100,1378 -(1091 + 171) ,23 + 116 );v81.TextSize=43 -29 ;v81.Font=Enum.Font.GothamBold;v81.ClearTextOnFocus=true;v81.Parent=v67;local v92=Instance.new("TextButton");v92.Size=UDim2.new(0.41 -0 ,0,374 -(123 + 251) ,44);v92.Position=UDim2.new(0.07 -0 ,0,698 -(208 + 490) ,12 + 122 );v92.BackgroundColor3=Color3.fromRGB(14 + 16 ,877 -(660 + 176) ,8 + 51 );v92.Text="📋 LẤY KEY";v92.TextColor3=Color3.fromRGB(443 -(14 + 188) ,920 -(534 + 141) ,249);v92.TextSize=13;v92.Font=Enum.Font.GothamBold;v92.AutoButtonColor=false;v92.Parent=v22;local v102=Instance.new("UICorner");v102.CornerRadius=UDim.new(0,5 + 7 );v102.Parent=v92;local v105=Instance.new("UIStroke");v105.Color=Color3.fromRGB(255,255,255);v105.Transparency=0.85 + 0 ;v105.Thickness=1;v105.Parent=v92;local v110=Instance.new("TextButton");v110.Size=UDim2.new(0.41 + 0 ,0 -0 ,0,69 -25 );v110.Position=UDim2.new(0.52,0 -0 ,0 + 0 ,134);v110.BackgroundColor3=Color3.fromRGB(30 + 16 ,600 -(115 + 281) ,113);v110.Text="🚀 VÀO GAME";v110.TextColor3=Color3.fromRGB(255,593 -338 ,255);v110.TextSize=11 + 2 ;v110.Font=Enum.Font.GothamBold;v110.AutoButtonColor=false;v110.Parent=v22;local v120=Instance.new("UICorner");v120.CornerRadius=UDim.new(0,12);v120.Parent=v110;local v123=Instance.new("UIGradient");v123.Color=ColorSequence.new({ColorSequenceKeypoint.new(0 -0 ,Color3.fromRGB(913 -(550 + 317) ,294 -90 ,113)),ColorSequenceKeypoint.new(1,Color3.fromRGB(39,243 -69 ,268 -172 ))});v123.Parent=v110;local v126=Instance.new("TextLabel");v126.Size=UDim2.new(285.86 -(134 + 151) ,1665 -(970 + 695) ,0 -0 ,2022 -(582 + 1408) );v126.Position=UDim2.new(0.07,0,0,198);v126.BackgroundTransparency=3 -2 ;v126.Text="Trạng thái: Sẵn sàng nhập Key";v126.TextColor3=Color3.fromRGB(185 -37 ,614 -451 ,2008 -(1195 + 629) );v126.TextSize=15 -3 ;v126.Font=Enum.Font.GothamMedium;v126.TextWrapped=true;v126.Parent=v22;local v137,v138,v139,v140;local function v141(v148) local v149=0;local v150;while true do if (v149==0) then v150=v148.Position-v139 ;v2:Create(v22,TweenInfo.new(0.15,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.new(v140.X.Scale,v140.X.Offset + v150.X ,v140.Y.Scale,v140.Y.Offset + v150.Y )}):Play();break;end end end v22.InputBegan:Connect(function(v151) if ((v151.UserInputType==Enum.UserInputType.MouseButton1) or (v151.UserInputType==Enum.UserInputType.Touch)) then local v184=241 -(187 + 54) ;while true do if (v184==(780 -(162 + 618))) then v137=true;v139=v151.Position;v184=1 + 0 ;end if (v184==(1 + 0)) then v140=v22.Position;v151.Changed:Connect(function() if (v151.UserInputState==Enum.UserInputState.End) then v137=false;end end);break;end end end end);v22.InputChanged:Connect(function(v152) if ((v152.UserInputType==Enum.UserInputType.MouseMovement) or (v152.UserInputType==Enum.UserInputType.Touch)) then v138=v152;end end);v3.InputChanged:Connect(function(v153) if ((v153==v138) and v137) then v141(v153);end end);local function v142(v154,v155,v156) v154.MouseEnter:Connect(function() v2:Create(v154,TweenInfo.new(0.2),{BackgroundColor3=v156}):Play();end);v154.MouseLeave:Connect(function() v2:Create(v154,TweenInfo.new(0.2 -0 ),{BackgroundColor3=v155}):Play();end);end v142(v92,Color3.fromRGB(50 -20 ,4 + 37 ,1695 -(1373 + 263) ),Color3.fromRGB(51,65,1085 -(451 + 549) ));local function v143(v157) local v158=os.date("!%Y-%m-%d");local v159=v157   .. "_"   .. v158 ;local v160=0;for v181=1, #v159 do local v182=0 + 0 ;local v183;while true do if (v182==(0 -0)) then v183=string.byte(v159,v181);v160=((v160 * (51 -20)) + v183)%4294967296 ;break;end end end return "TK_"   .. string.format("%X",v160) ;end v92.MouseButton1Click:Connect(function() local v161=v143(v7);local v162=v5   .. "/getkey?hwid="   .. v7   .. "&token="   .. v161 ;local v163=v0:UrlEncode(v162);local v164=v6   .. v163 ;pcall(function() setclipboard(v164);end);v126.TextColor3=Color3.fromRGB(1627 -(746 + 638) ,156,7 + 11 );v126.Text="📋 Đã copy link! Hãy dán vào trình duyệt để vượt quảng cáo.";end);v110.MouseButton1Click:Connect(function() local v167=0 -0 ;local v168;local v169;local v170;while true do if (v167==(344 -(218 + 123))) then if v170 then task.spawn(function() local v195,v196=pcall(function() return v170({Url=v169,Method="GET"});end);if (v195 and v196 and v196.Body) then local v197,v198=pcall(function() return v0:JSONDecode(v196.Body);end);if (v197 and v198 and (v198.status=="success") and v198.scriptUrl) then local v204=1581 -(1535 + 46) ;while true do if (v204==2) then task.wait(0.5 + 0 );v16:Destroy();v204=3;end if ((1 + 0)==v204) then v126.Text="✅ Xác thực thành công! Đang tải Script...";v2:Create(v22,TweenInfo.new(560.4 -(306 + 254) ,Enum.EasingStyle.Back,Enum.EasingDirectio
-n.In),{Size=UDim2.new(0 + 0 ,0 -0 ,0,1467 -(899 + 568) ),Position=UDim2.new(0.5,0 + 0 ,0.5 -0 ,603 -(268 + 335) )}):Play();v204=292 -(60 + 230) ;end if ((572 -(426 + 146))==v204) then if v9 then pcall(v9,v8,v12(v168));end v126.TextColor3=Color3.fromRGB(6 + 40 ,1660 -(282 + 1174) ,924 -(569 + 242) );v204=1;end if (v204==(8 -5)) then loadstring(game:HttpGet(v198.scriptUrl))();break;end end else local v205=0;while true do if (v205==(0 + 0)) then v126.TextColor3=Color3.fromRGB(1255 -(706 + 318) ,1327 -(721 + 530) ,1331 -(945 + 326) );v126.Text="❌ Key không hợp lệ hoặc đã hết hạn!";break;end end end else local v199=0 -0 ;while true do if ((0 + 0)==v199) then v126.TextColor3=Color3.fromRGB(931 -(271 + 429) ,70 + 6 ,1560 -(1408 + 92) );v126.Text="❌ Lỗi kết nối đến Server xác thực!";break;end end end end);else local v189=1086 -(461 + 625) ;while true do if (v189==(1288 -(993 + 295))) then v126.TextColor3=Color3.fromRGB(12 + 219 ,1247 -(418 + 753) ,60);v126.Text="❌ Executor không hỗ trợ tính năng Request!";break;end end end break;end if (v167==(1 + 1)) then v169=v5   .. "/verify?hwid="   .. v7   .. "&key="   .. v168 ;v170=http_request or request or (syn and syn.request) or (fluxus and fluxus.request) ;v167=1 + 2 ;end if (v167==0) then v168=string.gsub(v81.Text,"^%s*(.-)%s*$","%1");if ((v168=="") or (v168=="Nhập Key vào đây...")) then local v190=0 + 0 ;while true do if (v190==(0 + 0)) then v126.TextColor3=Color3.fromRGB(760 -(406 + 123) ,76,1829 -(1749 + 20) );v126.Text="⚠️ Vui lòng nhập mã Key vào ô trống!";v190=1 + 0 ;end if (v190==1) then return;end end end v167=1323 -(1249 + 73) ;end if (v167==(1 + 0)) then v126.TextColor3=Color3.fromRGB(1386 -(466 + 679) ,245,598 -349 );v126.Text="🔄 Đang xác thực Key...";v167=2;end end end);
+local v0 = game:GetService("HttpService");
+local v1 = game:GetService("Players");
+local v2 = game:GetService("TweenService");
+local v3 = game:GetService("UserInputService");
+local v4 = v1.LocalPlayer;
+local v5 = "https://my-key-system-eyd6.onrender.com";
+local v6 = "https://link4m.co/st?api=6ab403116930ce4d991e5e9b&url=";
+local v7 = game:GetService("RbxAnalyticsService"):GetClientId();
+local v8 = "Pitaya_Key.dat";
+local v9 = writefile or (syn and syn.writefile);
+local v10 = readfile or (syn and syn.readfile);
+local v11 = isfile or (syn and syn.isfile);
+local function v12(v144)
+	local v145 = {};
+	for v171 = 1, #v144 do
+		local v172 = string.byte(v7, ((v171 - 1) % #v7) + 1);
+		local v173 = string.byte(v144, v171);
+		table.insert(v145, string.format("%02X", bit32.bxor(v173, v172)));
+	end
+	return table.concat(v145);
+end
+local function v13(v146)
+	local v147 = {};
+	for v174 = 1, #v146, 2 do
+		local v175 = string.sub(v146, v174, v174 + 1);
+		local v176 = tonumber(v175, 16);
+		if v176 then
+			local v187 = string.byte(v7, ((((v174 + 1) / 2) - 1) % #v7) + 1);
+			table.insert(v147, string.char(bit32.bxor(v176, v187)));
+		end
+	end
+	return table.concat(v147);
+end
+local v14 = false;
+if ((v11 and v11(v8)) or (4593 <= 2672)) then
+	local v177, v178 = pcall(v10, v8);
+	if ((v177 and (v178 ~= "")) or (1168 > 3156)) then
+		local v188 = v13(v178);
+		local v189 = http_request or request or (syn and syn.request) or (fluxus and fluxus.request);
+		if (v189 and (v188 ~= "")) then
+			local v192, v193 = pcall(function()
+				return v189({Url=(v5 .. "/verify?hwid=" .. v7 .. "&key=" .. v188),Method="GET"});
+			end);
+			if (v192 and v193 and v193.Body) then
+				local v198, v199 = pcall(function()
+					return v0:JSONDecode(v193.Body);
+				end);
+				if ((v198 and v199 and (v199.status == "success") and v199.scriptUrl) or (572 > 4486)) then
+					v14 = true;
+					game:GetService("StarterGui"):SetCore("SendNotification", {Title="Pitaya Hub",Text="✅ Auto-Key thành công! Đang tải Script...",Duration=3});
+					task.wait(0.5);
+					loadstring(game:HttpGet(v199.scriptUrl))();
+				end
+			end
+		end
+	end
+end
+if ((1404 == 1404) and v14) then
+	return;
+end
+local v15 = v4:WaitForChild("PlayerGui");
+if (v15:FindFirstChild("KeySystemGui") or (3748 < 2212)) then
+	v15.KeySystemGui:Destroy();
+end
+local v16 = Instance.new("ScreenGui");
+v16.Name = "KeySystemGui";
+v16.Parent = v15;
+v16.ResetOnSpawn = false;
+v16.ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
+local v22 = Instance.new("Frame");
+v22.Name = "MainFrame";
+v22.Size = UDim2.new(0, 420, 0, 270);
+v22.Position = UDim2.new(0.5, -210, 0.5, -135);
+v22.BackgroundColor3 = Color3.fromRGB(15, 18, 26);
+v22.BackgroundTransparency = 0.1;
+v22.BorderSizePixel = 0;
+v22.ClipsDescendants = true;
+v22.Parent = v16;
+local v31 = Instance.new("UICorner");
+v31.CornerRadius = UDim.new(0, 18);
+v31.Parent = v22;
+local v34 = Instance.new("UIStroke");
+v34.ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+v34.Color = Color3.fromRGB(255, 255, 255);
+v34.Transparency = 0.88;
+v34.Thickness = 1.5;
+v34.Parent = v22;
+local v41 = Instance.new("UIGradient");
+v41.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 27, 38)),ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 12, 18))});
+v41.Rotation = 45;
+v41.Parent = v22;
+local v45 = Instance.new("TextLabel");
+v45.Name = "Title";
+v45.Size = UDim2.new(1, 0, 0, 48);
+v45.Position = UDim2.new(0, 0, 0, 10);
+v45.BackgroundTransparency = 1;
+v45.Text = "PITAYA HUB - KEY SYSTEM";
+v45.TextColor3 = Color3.fromRGB(255, 255, 255);
+v45.TextSize = 16;
+v45.Font = Enum.Font.GothamBold;
+v45.Parent = v22;
+local v56 = Instance.new("TextLabel");
+v56.Name = "SubTitle";
+v56.Size = UDim2.new(1, 0, 0, 20);
+v56.Position = UDim2.new(0, 0, 0, 36);
+v56.BackgroundTransparency = 1;
+v56.Text = "Xác thực Key 24h để kích hoạt Script";
+v56.TextColor3 = Color3.fromRGB(148, 163, 184);
+v56.TextSize = 12;
+v56.Font = Enum.Font.Gotham;
+v56.Parent = v22;
+local v67 = Instance.new("Frame");
+v67.Size = UDim2.new(0.86, 0, 0, 46);
+v67.Position = UDim2.new(0.07, 0, 0, 72);
+v67.BackgroundColor3 = Color3.fromRGB(15, 19, 28);
+v67.BorderSizePixel = 0;
+v67.Parent = v22;
+local v73 = Instance.new("UICorner");
+v73.CornerRadius = UDim.new(0, 12);
+v73.Parent = v67;
+local v76 = Instance.new("UIStroke");
+v76.Color = Color3.fromRGB(46, 204, 113);
+v76.Transparency = 0.7;
+v76.Thickness = 1;
+v76.Parent = v67;
+local v81 = Instance.new("TextBox");
+v81.Size = UDim2.new(1, -20, 1, 0);
+v81.Position = UDim2.new(0, 10, 0, 0);
+v81.BackgroundTransparency = 1;
+v81.TextColor3 = Color3.fromRGB(46, 204, 113);
+v81.PlaceholderText = "Nhập Key vào đây...";
+v81.PlaceholderColor3 = Color3.fromRGB(100, 116, 139);
+v81.TextSize = 14;
+v81.Font = Enum.Font.GothamBold;
+v81.ClearTextOnFocus = true;
+v81.Parent = v67;
+local v92 = Instance.new("TextButton");
+v92.Size = UDim2.new(0.41, 0, 0, 44);
+v92.Position = UDim2.new(0.07, 0, 0, 134);
+v92.BackgroundColor3 = Color3.fromRGB(30, 41, 59);
+v92.Text = "📋 LẤY KEY";
+v92.TextColor3 = Color3.fromRGB(241, 245, 249);
+v92.TextSize = 13;
+v92.Font = Enum.Font.GothamBold;
+v92.AutoButtonColor = false;
+v92.Parent = v22;
+local v102 = Instance.new("UICorner");
+v102.CornerRadius = UDim.new(0, 12);
+v102.Parent = v92;
+local v105 = Instance.new("UIStroke");
+v105.Color = Color3.fromRGB(255, 255, 255);
+v105.Transparency = 0.85;
+v105.Thickness = 1;
+v105.Parent = v92;
+local v110 = Instance.new("TextButton");
+v110.Size = UDim2.new(0.41, 0, 0, 44);
+v110.Position = UDim2.new(0.52, 0, 0, 134);
+v110.BackgroundColor3 = Color3.fromRGB(46, 204, 113);
+v110.Text = "🚀 VÀO GAME";
+v110.TextColor3 = Color3.fromRGB(255, 255, 255);
+v110.TextSize = 13;
+v110.Font = Enum.Font.GothamBold;
+v110.AutoButtonColor = false;
+v110.Parent = v22;
+local v120 = Instance.new("UICorner");
+v120.CornerRadius = UDim.new(0, 12);
+v120.Parent = v110;
+local v123 = Instance.new("UIGradient");
+v123.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(46, 204, 113)),ColorSequenceKeypoint.new(1, Color3.fromRGB(39, 174, 96))});
+v123.Parent = v110;
+local v126 = Instance.new("TextLabel");
+v126.Size = UDim2.new(0.86, 0, 0, 32);
+v126.Position = UDim2.new(0.07, 0, 0, 198);
+v126.BackgroundTransparency = 1;
+v126.Text = "Trạng thái: Sẵn sàng nhập Key";
+v126.TextColor3 = Color3.fromRGB(148, 163, 184);
+v126.TextSize = 12;
+v126.Font = Enum.Font.GothamMedium;
+v126.TextWrapped = true;
+v126.Parent = v22;
+local v137, v138, v139, v140;
+local function v141(v148)
+	local v149 = v148.Position - v139;
+	v2:Create(v22, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position=UDim2.new(v140.X.Scale, v140.X.Offset + v149.X, v140.Y.Scale, v140.Y.Offset + v149.Y)}):Play();
+end
+v22.InputBegan:Connect(function(v150)
+	if ((v150.UserInputType == Enum.UserInputType.MouseButton1) or (v150.UserInputType == Enum.UserInputType.Touch)) then
+		v137 = true;
+		v139 = v150.Position;
+		v140 = v22.Position;
+		v150.Changed:Connect(function()
+			if ((v150.UserInputState == Enum.UserInputState.End) or (1180 == 2180)) then
+				v137 = false;
+			end
+		end);
+	end
+end);
+v22.InputChanged:Connect(function(v151)
+	if ((v151.UserInputType == Enum.UserInputType.MouseMovement) or (v151.UserInputType == Enum.UserInputType.Touch)) then
+		v138 = v151;
+	end
+end);
+v3.InputChanged:Connect(function(v152)
+	if ((4090 < 4653) and (v152 == v138) and v137) then
+		v141(v152);
+	end
+end);
+local function v142(v153, v154, v155)
+	v153.MouseEnter:Connect(function()
+		v2:Create(v153, TweenInfo.new(0.2), {BackgroundColor3=v155}):Play();
+	end);
+	v153.MouseLeave:Connect(function()
+		v2:Create(v153, TweenInfo.new(0.2), {BackgroundColor3=v154}):Play();
+	end);
+end
+v142(v92, Color3.fromRGB(30, 41, 59), Color3.fromRGB(51, 65, 85));
+local function v143(v156)
+	local v157 = os.date("!%Y-%m-%d");
+	local v158 = v156 .. "_" .. v157;
+	local v159 = 0;
+	for v179 = 1, #v158 do
+		local v180 = string.byte(v158, v179);
+		v159 = ((v159 * 31) + v180) % 4294967296;
+	end
+	return "TK_" .. string.format("%X", v159);
+end
+v92.MouseButton1Click:Connect(function()
+	local v160 = v143(v7);
+	local v161 = v5 .. "/getkey?hwid=" .. v7 .. "&token=" .. v160;
+	local v162 = v0:UrlEncode(v161);
+	local v163 = v6 .. v162;
+	pcall(function()
+		setclipboard(v163);
+	end);
+	v126.TextColor3 = Color3.fromRGB(243, 156, 18);
+	v126.Text = "📋 Đã copy link! Hãy dán vào trình duyệt để vượt quảng cáo.";
+end);
+v110.MouseButton1Click:Connect(function()
+	local v166 = string.gsub(v81.Text, "^%s*(.-)%s*$", "%1");
+	if ((v166 == "") or (v166 == "Nhập Key vào đây...")) then
+		v126.TextColor3 = Color3.fromRGB(231, 76, 60);
+		v126.Text = "⚠️ Vui lòng nhập mã Key vào ô trống!";
+		return;
+	end
+	v126.TextColor3 = Color3.fromRGB(241, 245, 249);
+	v126.Text = "🔄 Đang xác thực Key...";
+	local v169 = v5 .. "/verify?hwid=" .. v7 .. "&key=" .. v166;
+	local v170 = http_request or request or (syn and syn.request) or (fluxus and fluxus.request);
+	if v170 then
+		task.spawn(function()
+			local v190, v191 = pcall(function()
+				return v170({Url=v169,Method="GET"});
+			end);
+			if (v190 and v191 and v191.Body) then
+				local v194, v195 = pcall(function()
+					return v0:JSONDecode(v191.Body);
+				end);
+				if (v194 and v195 and (v195.status == "success") and v195.scriptUrl) then
+					if (v9 or (2652 < 196)) then
+						pcall(v9, v8, v12(v166));
+					end
+					v126.TextColor3 = Color3.fromRGB(46, 204, 113);
+					v126.Text = "✅ Xác thực thành công! Đang tải Script...";
+					v2:Create(v22, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size=UDim2.new(0, 0, 0, 0),Position=UDim2.new(0.5, 0, 0.5, 0)}):Play();
+					task.wait(0.5);
+					v16:Destroy();
+					loadstring(game:HttpGet(v195.scriptUrl))();
+				else
+					v126.TextColor3 = Color3.fromRGB(231, 76, 60);
+					v126.Text = "❌ Key không hợp lệ hoặc đã hết hạn!";
+				end
+			else
+				v126.TextColor3 = Color3.fromRGB(231, 76, 60);
+				v126.Text = "❌ Lỗi kết nối đến Server xác thực!";
+			end
+		end);
+	else
+		v126.TextColor3 = Color3.fromRGB(231, 76, 60);
+		v126.Text = "❌ Executor không hỗ trợ tính năng Request!";
+	end
+end);
