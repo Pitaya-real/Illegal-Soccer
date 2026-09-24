@@ -1,0 +1,365 @@
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local localPlayer = Players.LocalPlayer
+
+local RENDER_URL = "https://my-key-system-eyd6.onrender.com" 
+local LINK4M_BASE = "https://link4m.co/st?api=6ab403116930ce4d991e5e9b&url=" 
+
+local HWID = game:GetService("RbxAnalyticsService"):GetClientId()
+
+-- HÀM MÃ HÓA & GIẢI MÃ BẰNG HWID + FILE SAVER
+local KEY_FILE = "Pitaya_Key.dat"
+local saveFile = writefile or (syn and syn.writefile)
+local loadFile = readfile or (syn and syn.readfile)
+local checkFile = isfile or (syn and syn.isfile)
+
+local function encryptKey(str)
+    local result = {}
+    for i = 1, #str do
+        local keyByte = string.byte(HWID, (i - 1) % #HWID + 1)
+        local strByte = string.byte(str, i)
+        table.insert(result, string.format("%02X", bit32.bxor(strByte, keyByte)))
+    end
+    return table.concat(result)
+end
+
+local function decryptKey(hexStr)
+    local bytes = {}
+    for i = 1, #hexStr, 2 do
+        local hex = string.sub(hexStr, i, i + 1)
+        local byteVal = tonumber(hex, 16)
+        if byteVal then
+            local keyByte = string.byte(HWID, ((i + 1) / 2 - 1) % #HWID + 1)
+            table.insert(bytes, string.char(bit32.bxor(byteVal, keyByte)))
+        end
+    end
+    return table.concat(bytes)
+end
+
+-- ==========================================
+-- 1. KIỂM TRA ĐỒNG BỘ AUTO-KEY TRƯỚC KHI TẠO GUI
+-- ==========================================
+local isKeyValidAndLoaded = false
+
+if checkFile and checkFile(KEY_FILE) then
+    local successRead, rawData = pcall(loadFile, KEY_FILE)
+    if successRead and rawData ~= "" then
+        local savedKey = decryptKey(rawData)
+        local httpRequest = http_request or request or (syn and syn.request) or (fluxus and fluxus.request)
+        if httpRequest and savedKey ~= "" then
+            local success, res = pcall(function()
+                return httpRequest({
+                    Url = RENDER_URL .. "/verify?hwid=" .. HWID .. "&key=" .. savedKey,
+                    Method = "GET"
+                })
+            end)
+            if success and res and res.Body then
+                local successDecode, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
+                if successDecode and data and data.status == "success" and data.scriptUrl then
+                    isKeyValidAndLoaded = true
+                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                        Title = "Pitaya Hub",
+                        Text = "✅ Auto-Key thành công! Đang tải Script...",
+                        Duration = 3
+                    })
+                    task.wait(0.5)
+                    loadstring(game:HttpGet(data.scriptUrl))()
+                end
+            end
+        end
+    end
+end
+
+-- NẾU KEY ĐÃ HỢP LỆ VÀ ĐÃ NẠP SCRIPT -> DỪNG KHÔNG TẠO GUI NỮA
+if isKeyValidAndLoaded then
+    return
+end
+
+-- ==========================================
+-- 2. CHỈ TẠO GUI NẾU CHƯA CÓ KEY HOẶC KEY HẾT HẠN
+-- ==========================================
+
+-- DỌN DẸP GUI CŨ
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+if playerGui:FindFirstChild("KeySystemGui") then 
+    playerGui.KeySystemGui:Destroy() 
+end
+
+-- TẠO SCREEN GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "KeySystemGui"
+ScreenGui.Parent = playerGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- MAIN FRAME (Nền Kính Tối)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 420, 0, 270)
+MainFrame.Position = UDim2.new(0.5, -210, 0.5, -135)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 18)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Color = Color3.fromRGB(255, 255, 255)
+MainStroke.Transparency = 0.88
+MainStroke.Thickness = 1.5
+MainStroke.Parent = MainFrame
+
+local MainGradient = Instance.new("UIGradient")
+MainGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 27, 38)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 12, 18))
+})
+MainGradient.Rotation = 45
+MainGradient.Parent = MainFrame
+
+-- TIÊU ĐỀ HỆ THỐNG
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, 0, 0, 48)
+Title.Position = UDim2.new(0, 0, 0, 10)
+Title.BackgroundTransparency = 1
+Title.Text = "PITAYA HUB - KEY SYSTEM"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.Parent = MainFrame
+
+local SubTitle = Instance.new("TextLabel")
+SubTitle.Name = "SubTitle"
+SubTitle.Size = UDim2.new(1, 0, 0, 20)
+SubTitle.Position = UDim2.new(0, 0, 0, 36)
+SubTitle.BackgroundTransparency = 1
+SubTitle.Text = "Xác thực Key 24h để kích hoạt Script"
+SubTitle.TextColor3 = Color3.fromRGB(148, 163, 184)
+SubTitle.TextSize = 12
+SubTitle.Font = Enum.Font.Gotham
+SubTitle.Parent = MainFrame
+
+-- Ô NHẬP KEY (KEYBOX)
+local KeyBoxFrame = Instance.new("Frame")
+KeyBoxFrame.Size = UDim2.new(0.86, 0, 0, 46)
+KeyBoxFrame.Position = UDim2.new(0.07, 0, 0, 72)
+KeyBoxFrame.BackgroundColor3 = Color3.fromRGB(15, 19, 28)
+KeyBoxFrame.BorderSizePixel = 0
+KeyBoxFrame.Parent = MainFrame
+
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0, 12)
+BoxCorner.Parent = KeyBoxFrame
+
+local BoxStroke = Instance.new("UIStroke")
+BoxStroke.Color = Color3.fromRGB(46, 204, 113)
+BoxStroke.Transparency = 0.7
+BoxStroke.Thickness = 1
+BoxStroke.Parent = KeyBoxFrame
+
+local KeyBox = Instance.new("TextBox")
+KeyBox.Size = UDim2.new(1, -20, 1, 0)
+KeyBox.Position = UDim2.new(0, 10, 0, 0)
+KeyBox.BackgroundTransparency = 1
+KeyBox.TextColor3 = Color3.fromRGB(46, 204, 113)
+KeyBox.PlaceholderText = "Nhập Key vào đây..."
+KeyBox.PlaceholderColor3 = Color3.fromRGB(100, 116, 139)
+KeyBox.TextSize = 14
+KeyBox.Font = Enum.Font.GothamBold
+KeyBox.ClearTextOnFocus = true
+KeyBox.Parent = KeyBoxFrame
+
+-- NÚT LẤY KEY (GET KEY)
+local GetKeyBtn = Instance.new("TextButton")
+GetKeyBtn.Size = UDim2.new(0.41, 0, 0, 44)
+GetKeyBtn.Position = UDim2.new(0.07, 0, 0, 134)
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(30, 41, 59)
+GetKeyBtn.Text = "📋 LẤY KEY"
+GetKeyBtn.TextColor3 = Color3.fromRGB(241, 245, 249)
+GetKeyBtn.TextSize = 13
+GetKeyBtn.Font = Enum.Font.GothamBold
+GetKeyBtn.AutoButtonColor = false
+GetKeyBtn.Parent = MainFrame
+
+local BtnCorner1 = Instance.new("UICorner")
+BtnCorner1.CornerRadius = UDim.new(0, 12)
+BtnCorner1.Parent = GetKeyBtn
+
+local BtnStroke1 = Instance.new("UIStroke")
+BtnStroke1.Color = Color3.fromRGB(255, 255, 255)
+BtnStroke1.Transparency = 0.85
+BtnStroke1.Thickness = 1
+BtnStroke1.Parent = GetKeyBtn
+
+-- NÚT XÁC THỰC (VERIFY)
+local VerifyBtn = Instance.new("TextButton")
+VerifyBtn.Size = UDim2.new(0.41, 0, 0, 44)
+VerifyBtn.Position = UDim2.new(0.52, 0, 0, 134)
+VerifyBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+VerifyBtn.Text = "🚀 VÀO GAME"
+VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+VerifyBtn.TextSize = 13
+VerifyBtn.Font = Enum.Font.GothamBold
+VerifyBtn.AutoButtonColor = false
+VerifyBtn.Parent = MainFrame
+
+local BtnCorner2 = Instance.new("UICorner")
+BtnCorner2.CornerRadius = UDim.new(0, 12)
+BtnCorner2.Parent = VerifyBtn
+
+local VerifyGradient = Instance.new("UIGradient")
+VerifyGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(46, 204, 113)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(39, 174, 96))
+})
+VerifyGradient.Parent = VerifyBtn
+
+-- CẢNH BÁO / TRẠNG THÁI
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(0.86, 0, 0, 32)
+StatusLabel.Position = UDim2.new(0.07, 0, 0, 198)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Trạng thái: Sẵn sàng nhập Key"
+StatusLabel.TextColor3 = Color3.fromRGB(148, 163, 184)
+StatusLabel.TextSize = 12
+StatusLabel.Font = Enum.Font.GothamMedium
+StatusLabel.TextWrapped = true
+StatusLabel.Parent = MainFrame
+
+-- TÍNH NĂNG KÉO THẢ GIAO DIỆN (SMOOTH DRAG)
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    TweenService:Create(MainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    }):Play()
+end
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- HIỆU ỨNG HOVER NÚT
+local function animateButton(btn, normalColor, hoverColor)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = normalColor}):Play()
+    end)
+end
+
+animateButton(GetKeyBtn, Color3.fromRGB(30, 41, 59), Color3.fromRGB(51, 65, 85))
+
+-- ==========================================
+-- SỰ KIỆN XỬ LÝ LOGIC KEY SYSTEM
+-- ==========================================
+
+-- 1. BẤM NÚT LẤY KEY
+GetKeyBtn.MouseButton1Click:Connect(function()
+    local generatedToken = "TK_" .. tostring(math.random(100000, 999999)) .. "_" .. tostring(os.time())
+    local targetUrl = RENDER_URL .. "/getkey?hwid=" .. HWID .. "&token=" .. generatedToken
+    local encodedTarget = HttpService:UrlEncode(targetUrl)
+    local fullLink = LINK4M_BASE .. encodedTarget
+    
+    pcall(function()
+        setclipboard(fullLink)
+    end)
+    
+    StatusLabel.TextColor3 = Color3.fromRGB(243, 156, 18)
+    StatusLabel.Text = "📋 Đã copy link! Hãy dán vào trình duyệt để vượt quảng cáo."
+end)
+
+-- 2. BẤM NÚT VÀO GAME (VERIFY THỦ CÔNG)
+VerifyBtn.MouseButton1Click:Connect(function()
+    local userKey = string.gsub(KeyBox.Text, "^%s*(.-)%s*$", "%1")
+    
+    if userKey == "" or userKey == "Nhập Key vào đây..." then
+        StatusLabel.TextColor3 = Color3.fromRGB(231, 76, 60)
+        StatusLabel.Text = "⚠️ Vui lòng nhập mã Key vào ô trống!"
+        return
+    end
+    
+    StatusLabel.TextColor3 = Color3.fromRGB(241, 245, 249)
+    StatusLabel.Text = "🔄 Đang xác thực Key..."
+    
+    local verifyUrl = RENDER_URL .. "/verify?hwid=" .. HWID .. "&key=" .. userKey
+    local httpRequest = http_request or request or (syn and syn.request) or (fluxus and fluxus.request)
+    
+    if httpRequest then
+        task.spawn(function()
+            local success, res = pcall(function()
+                return httpRequest({
+                    Url = verifyUrl,
+                    Method = "GET"
+                })
+            end)
+            
+            if success and res and res.Body then
+                local successDecode, data = pcall(function()
+                    return HttpService:JSONDecode(res.Body)
+                end)
+                
+                if successDecode and data and data.status == "success" and data.scriptUrl then
+                    -- MÃ HÓA VÀ LƯU KEY
+                    if saveFile then
+                        pcall(saveFile, KEY_FILE, encryptKey(userKey))
+                    end
+
+                    StatusLabel.TextColor3 = Color3.fromRGB(46, 204, 113)
+                    StatusLabel.Text = "✅ Xác thực thành công! Đang tải Script..."
+                    
+                    TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                        Size = UDim2.new(0, 0, 0, 0),
+                        Position = UDim2.new(0.5, 0, 0.5, 0)
+                    }):Play()
+                    
+                    task.wait(0.5)
+                    ScreenGui:Destroy()
+                    
+                    -- Tải và chạy script chính
+                    loadstring(game:HttpGet(data.scriptUrl))()
+                else
+                    StatusLabel.TextColor3 = Color3.fromRGB(231, 76, 60)
+                    StatusLabel.Text = "❌ Key không hợp lệ hoặc đã hết hạn!"
+                end
+            else
+                StatusLabel.TextColor3 = Color3.fromRGB(231, 76, 60)
+                StatusLabel.Text = "❌ Lỗi kết nối đến Server xác thực!"
+            end
+        end)
+    else
+        StatusLabel.TextColor3 = Color3.fromRGB(231, 76, 60)
+        StatusLabel.Text = "❌ Executor không hỗ trợ tính năng Request!"
+    end
+end)
