@@ -9,6 +9,553 @@
 
 ]]--
 
-local v0=loadstring(game:HttpGet("https://raw.githubusercontent.com/Pitaya-real/PitayaUI/refs/heads/main/Pitayauisource.lua"))();local v1=game:GetService("Players");local v2=game:GetService("RunService");local v3=game:GetService("VirtualInputManager");local v4=game:GetService("UserInputService");local v5=game:GetService("Workspace");local v6=game:GetService("CoreGui");local v7=v1.LocalPlayer;local v8=v5.CurrentCamera;local v9={GOAL_DETECTION_DIST=43 + 27 ,BALL_SAVE_DIST=137 -102 ,PREDICTION_TIME=0.32 + 0 ,COOLDOWN=1 + 0 ,LEFT_RIGHT_THRESHOLD=1057 -(87 + 968) ,HIGH_SHOT_THRESHOLD=8.5 -6 ,CATCH_RADIUS=4.5 + 0 ,POSITIONING_DIST=45,MIN_BALL_SPEED=13 -7 ,GRAVITY=1609.2 -(447 + 966) };local v10=false;local v11=false;local v12=false;local v13=true;local v14=false;local v15=false;local v16=false;local v17=false;local v18=nil;local v19=0;local v20=Vector3.zero;local v21=v4.TouchEnabled and  not v4.KeyboardEnabled ;local v22=v0:CreateWindow({Title="Smart GK System | PITAYA HUB",Logo="rbxassetid://73866843639743",Theme="PitayaUI",Font="Gotham",Loading=true,LoadingTitle="<b>Smart GK BETA</b> PITAYA REAL"});local v23;if gethui then v23=gethui();elseif (syn and syn.protect_gui) then local v181=0;while true do if (v181==(2 -1)) then v23.Parent=v6;break;end if (v181==(1817 -(1703 + 114))) then v23=Instance.new("Folder");syn.protect_gui(v23);v181=702 -(376 + 325) ;end end else local v182=0 -0 ;local v183;local v184;while true do if (v182==0) then v183,v184=pcall(function() local v264=v6.Name;end);if v183 then v23=v6;else v23=v7:WaitForChild("PlayerGui");end break;end end end local v24=Instance.new("ScreenGui");v24.Name="SmartGKMobileControls_Protect";v24.ResetOnSpawn=false;v24.DisplayOrder=30766 -20767 ;v24.Parent=v23;if  not v21 then v24.Enabled=false;end local v29={};local function v30(v75,v76,v77,v78,v79,v80,v81) local v82=Instance.new("Frame");v82.Name=v75;v82.Size=v78;v82.Position=v77;v82.BackgroundColor3=v79;v82.BackgroundTransparency=0.3;v82.ZIndex=60;v82.Parent=v24;local v90=Instance.new("UICorner");v90.CornerRadius=UDim.new(1,0 + 0 );v90.Parent=v82;local v93=Instance.new("UIStroke");v93.Color=Color3.fromRGB(561 -306 ,269 -(9 + 5) ,255);v93.Thickness=378 -(85 + 291) ;v93.Transparency=0.3;v93.Parent=v82;local v98=Instance.new("TextLabel");v98.Size=UDim2.new(1,0,1266 -(243 + 1022) ,0);v98.BackgroundTransparency=3 -2 ;v98.Text=v76;v98.TextColor3=Color3.fromRGB(211 + 44 ,255,1435 -(1123 + 57) );v98.TextSize=11 + 2 ;v98.Font=Enum.Font.SourceSansBold;v98.ZIndex=315 -(163 + 91) ;v98.Parent=v82;v82.InputBegan:Connect(function(v168) if ((v168.UserInputType==Enum.UserInputType.Touch) or (v168.UserInputType==Enum.UserInputType.MouseButton1)) then local v185=1930 -(1869 + 61) ;while true do if (v185==(0 + 0)) then v29[v168]={btn=v82,onRelease=v81};if v80 then v80(v82);end break;end end end end);return v82;end v4.InputEnded:Connect(function(v108) if v29[v108] then local v171=v29[v108];if v171.onRelease then v171.onRelease(v171.btn);end v29[v108]=nil;end end);v30("ShiftBtn","Shift",UDim2.new(0.58 -0 ,0 -0 ,0.68,0 + 0 ),UDim2.new(0 -0 ,55 + 3 ,1474 -(1329 + 145) ,1029 -(140 + 831) ),Color3.fromRGB(2050 -(1409 + 441) ,818 -(15 + 703) ,14 + 16 ),function(v109) local v110=438 -(262 + 176) ;while true do if (v110==1) then v3:SendKeyEvent(v17,Enum.KeyCode.LeftShift,false,game);break;end if (v110==(1721 -(345 + 1376))) then v17= not v17;v109.BackgroundColor3=(v17 and Color3.fromRGB(738 -(198 + 490) ,795 -615 ,119 -69 )) or Color3.fromRGB(1406 -(696 + 510) ,100,62 -32 ) ;v110=1263 -(1091 + 171) ;end end end,nil);v30("JumpBtn","Nhảy",UDim2.new(0.85 + 0 ,0 -0 ,0.65 -0 ,374 -(123 + 251) ),UDim2.new(0,337 -269 ,698 -(208 + 490) ,6 + 62 ),Color3.fromRGB(18 + 22 ,40,876 -(660 + 176) ),function() v3:SendKeyEvent(true,Enum.KeyCode.Space,false,game);end,function() v3:SendKeyEvent(false,Enum.KeyCode.Space,false,game);end);v30("DiveBtn","Bay người",UDim2.new(0.72 + 0 ,202 -(14 + 188) ,0.68,675 -(534 + 141) ),UDim2.new(0 + 0 ,64,0 + 0 ,62 + 2 ),Color3.fromRGB(63 -33 ,30,47 -17 ),function() v3:SendKeyEvent(true,Enum.KeyCode.E,false,game);end,function() v3:SendKeyEvent(false,Enum.KeyCode.E,false,game);end);v30("ShootBtn","Sút",UDim2.new(0.74 -0 ,0 + 0 ,0.45,0 + 0 ),UDim2.new(396 -(115 + 281) ,134 -76 ,0,58),Color3.fromRGB(25 + 5 ,72 -42 ,30),function() v3:SendMouseButtonEvent(0,0 -0 ,867 -(550 + 317) ,true,game,0 -0 );end,function() v3:SendMouseButtonEvent(0 -0 ,0 -0 ,0,false,game,0);end);v30("PassBtn","Chuyền",UDim2.new(285.85 -(134 + 151) ,1665 -(970 + 695) ,0.42 -0 ,1990 -(582 + 1408) ),UDim2.new(0 -0 ,72 -14 ,0 -0 ,1882 -(1195 + 629) ),Color3.fromRGB(30,30,30),function() v3:SendMouseButtonEvent(0,0 -0 ,1,true,game,0);end,function() v3:SendMouseButtonEvent(241 -(187 + 54) ,0,781 -(162 + 618) ,false,game,0 + 0 );end);local v31=Vector2.zero;local v32=nil;local v33=Instance.new("ImageButton");v33.Name="JoystickBase";v33.Size=UDim2.new(0 + 0 ,277 -147 ,0 -0 ,11 + 119 );v33.Position=UDim2.new(1636.05 -(1373 + 263) ,0,1000.52 -(451 + 549) ,0 + 0 );v33.BackgroundColor3=Color3.fromRGB(31 -11 ,33 -13 ,1404 -(746 + 638) );v33.BackgroundTransparency=0.5 + 0 ;v33.ZIndex=91 -31 ;v33.Active=true;v33.Modal=true;v33.AutoButtonColor=false;v33.Image="";v33.Parent=v24;local v45=Instance.new("UICorner");v45.CornerRadius=UDim.new(342 -(218 + 123) ,1581 -(1535 + 46) );v45.Parent=v33;local v48=Instance.new("UIStroke");v48.Color=Color3.fromRGB(254 + 1 ,37 + 218 ,815 -(306 + 254) );v48.Thickness=2;v48.Transparency=0.4 + 0 ;v48.Parent=v33;local v53=Instance.new("Frame");v53.Name="JoystickThumb";v53.Size=UDim2.new(0,50,0 -0 ,1517 -(899 + 568) );v53.Position=UDim2.new(0.5 + 0 , -25,0.5 -0 , -(628 -(268 + 335)));v53.BackgroundColor3=Color3.fromRGB(545 -(60 + 230) ,827 -(426 + 146) ,31 + 224 );v53.BackgroundTransparency=0.2;v53.ZIndex=1517 -(282 + 1174) ;v53.Parent=v33;local v61=Instance.new("UICorner");v61.CornerRadius=UDim.new(812 -(569 + 242) ,0);v61.Parent=v53;local function v64() v32=nil;v31=Vector2.zero;v53.Position=UDim2.new(0.5 -0 , -(2 + 23),0.5, -25);end v33.InputBegan:Connect(function(v113) if (((v113.UserInputType==Enum.UserInputType.Touch) or (v113.UserInputType==Enum.UserInputType.MouseButton1)) and  not v32) then v32=v113;end end);v4.InputChanged:Connect(function(v114) if (v32 and ((v114==v32) or (v114.UserInputType==Enum.UserInputType.MouseMovement))) then local v173=1024 -(706 + 318) ;local v174;local v175;local v176;local v177;while true do if (v173==(1252 -(721 + 530))) then v176=v175-v174 ;v177=v33.AbsoluteSize.X/(1273 -(945 + 326)) ;v173=4 -2 ;end if (v173==(3 + 0)) then v31=v176/v177 ;break;end if (v173==(702 -(271 + 429))) then if (v176.Magnitude>v177) then v176=v176.Unit * v177 ;end v53.Position=UDim2.new(0.5,v176.X-25 ,0.5 + 0 ,v176.Y-25 );v173=3;end if (v173==(1500 -(1408 + 92))) then v174=v33.AbsolutePosition + (v33.AbsoluteSize/2) ;v175=Vector2.new(v114.Position.X,v114.Position.Y);v173=1087 -(461 + 625) ;end end end end);v4.InputEnded:Connect(function(v115) if ((v115==v32) or (v115.UserInputType==Enum.UserInputType.MouseButton1)) then v64();end end);local v65=v22:CreateTab("Smart GK","⚽");v65:AddLabel("--- Tự Động Thủ Môn ---",{BoldText=true});v65:AddToggle({Text="Tự Động Bắt Bóng (Auto Save)",BoldText=true,Default=false,Callback=function(v116) v10=v116;v22:Notify("Smart GK","Auto Save: "   .. ((v116 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>") ,1290 -(993 + 295) );end});v65:AddToggle({Text="Tự Động Khép Góc Khung Thành",BoldText=true,Default=false,Callback=function(v117) v12=v117;v22:Notify("Smart GK","Tự Khép Góc: "   .. ((v117 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>") ,2);end});v65:AddToggle({Text="Khóa Camera Vào Bóng (Cam Lock)",BoldText=true,Default=false,Callback=function(v118) local v119=0;while true do if (v119==(0 + 0)) then v11=v118;v22:Notify("Smart GK","Cam Lock: "   .. ((v118 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>") ,1173 -(418 + 753) );break;end end end});local v66=v22:CreateTab("Hiển Thị","👁️");v66:AddLabel("--- ESP Tinh Gọn (Minimalist) ---",{BoldText=true});v66:AddToggle({Text="ESP Trái Bóng (Mini Ball Marker)",BoldText=true,Default=false,Callback=function(v120) v14=v120;v22:Notify("ESP","ESP Bóng: "   .. ((v120 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>") ,1 + 1 );end});v66:AddToggle({Text="ESP Cầu Thủ (Leaderboard Team ESP)",BoldText=true,Default=false,Callback=function(v121) v15=v121;v22:Notify("ESP","ESP Cầu Thủ: "   .. ((v121 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>") ,2);end});local v67=v22:CreateTab("Điều Khiển","🎮");v67:AddLabel("--- Phím Tắt Ảo Mobile ---",{BoldText=true});v67:AddToggle({Text="Hiển Thị Nút Điều Khiển Mobile",BoldText=true,Default=v21,Callback=function(v122) local v123=0;while true do if (v123==1) then if  not v122 then v64();end break;end if (v123==(0 + 0)) then v13=v122;v24.Enabled=v122 and v21 ;v123=1;end end end});v67:AddButton({Text="Reset Vị Trí Joystick",BoldText=true,Callback=function() local v124=0 + 0 ;while true do if (v124==0) then v64();v22:Notify("Hệ Thống","Đã đặt lại Joystick!",1 + 1 );break;end end end});task.spawn(function() local v125=529 -(406 + 123) ;local v126;local v127;while true do if (v125==(1769 -(1749 + 20))) then v126=v7:WaitForChild("PlayerGui");v127=nil;v125=1;end if (v125==(1 + 0)) then function v127() for v237,v238 in ipairs(v126:GetChildren()) do if (v238:IsA("ScreenGui") and  not v238.Name:find("Protect") and (v238.Name~="PitayaUI")) then for v275,v276 in ipairs(v238:GetDescendants()) do if v276:IsA("GuiObject") then local v291=1322 -(1249 + 73) ;local v292;while true do if (v291==(0 + 0)) then v292=v276.Name:lower();if (v292:find("key") or v292:find("bind") or v292:find("pc") or v292:find("control")) then v276.Visible=false;end break;end end end end end end end v127();v125=2;end if (v125==(1147 -(466 + 679))) then v126.ChildAdded:Connect(function() task.wait(0.3 -0 );v127();end);break;end end end);local function v68(v128) if  not v128 then return nil;end if v128:IsA("BasePart") then return v128.Position;elseif v128:IsA("Model") then return (v128.PrimaryPart and v128.PrimaryPart.Posit
-ion) or v128:GetPivot().Position ;end return nil;end local function v69() local v129=0;local v130;while true do if (v129==(2 -1)) then return nil;end if (v129==(1900 -(106 + 1794))) then v130=v5:FindFirstChild("Misc");if v130 then local v239=v130:FindFirstChild("Visuals");if v239 then local v265=0 + 0 ;local v266;while true do if (v265==(0 + 0)) then v266=v239:FindFirstChild("ClientBall_MainMatch");if v266 then if v266:IsA("BasePart") then return v266;end if v266:IsA("Model") then return v266.PrimaryPart or v266:FindFirstChildWhichIsA("BasePart") or v266 ;end end v265=2 -1 ;end if (v265==(2 -1)) then return v239:FindFirstChildWhichIsA("BasePart");end end end end v129=1;end end end local function v70(v131) if  not v131 then return nil;end if v131.Team then return v131.Team.Name;end local v132=v131:FindFirstChild("leaderstats");if v132 then local v178=0;local v179;while true do if (v178==0) then v179=v132:FindFirstChild("Team") or v132:FindFirstChild("Đội") ;if v179 then return tostring(v179.Value);end break;end end end local v133=v131:FindFirstChild("TeamValue") or v131:FindFirstChild("TeamName") ;if v133 then return tostring(v133.Value);end return "NoTeam";end local function v71() local v134=0;local v135;local v136;local v137;local v138;local v139;while true do if (v134==1) then v136=v68(v135:FindFirstChild("HumanoidRootPart"));if  not v136 then return nil;end v134=116 -(4 + 110) ;end if (v134==(588 -(57 + 527))) then for v223,v224 in ipairs({"Team1","Team2"}) do local v225=0 + 0 ;local v226;while true do if (v225==(0 -0)) then v226=v137.Data:FindFirstChild(v224);if v226 then local v278=0 -0 ;local v279;while true do if (v278==(166 -(122 + 44))) then v279=v226:FindFirstChild("GoalMesh") or v226:FindFirstChild("Goal") or v226:FindFirstChild("Goalkeeper") ;if v279 then local v305=0;local v306;while true do if (v305==0) then v306=v68(v279);if v306 then local v308=0 -0 ;local v309;while true do if ((0 -0)==v308) then v309=(v136-v306).Magnitude;if (v309<v139) then v139=v309;v138=v279;end break;end end end break;end end end break;end end end break;end end end return v138;end if ((2 + 0)==v134) then v137=v5:FindFirstChild("Map");if ( not v137 or  not v137:FindFirstChild("Data")) then return nil;end v134=1 + 2 ;end if (0==v134) then v135=v7.Character;if  not v135 then return nil;end v134=1 -0 ;end if (v134==(68 -(30 + 35))) then v138=nil;v139=v9.GOAL_DETECTION_DIST;v134=3 + 1 ;end end end local function v72(v140,v141,v142,v143,v144) local v145=0;while true do if ((1257 -(1043 + 214))==v145) then if v16 then return;end v16=true;v145=3 -2 ;end if (v145==(1213 -(323 + 889))) then task.spawn(function() local v227=0;local v228;local v229;local v230;while true do if (v227==4) then task.wait(v9.COOLDOWN);v16=false;break;end if (v227==0) then v228=v7.Character;v229=v228 and v228:FindFirstChild("HumanoidRootPart") ;if v229 then v229.CFrame=CFrame.new(v229.Position,Vector3.new(v140.X,v229.Position.Y,v140.Z));end v227=2 -1 ;end if (v227==1) then if v144 then if v143 then local v295=580 -(361 + 219) ;while true do if (v295==0) then v3:SendKeyEvent(true,Enum.KeyCode.Space,false,game);task.wait(320.03 -(53 + 267) );v295=1 + 0 ;end if (v295==1) then v3:SendKeyEvent(false,Enum.KeyCode.Space,false,game);break;end end end v3:SendMouseButtonEvent(413 -(15 + 398) ,982 -(18 + 964) ,0 -0 ,true,game,0);task.wait(0.05 + 0 );v3:SendMouseButtonEvent(0 + 0 ,0,0,false,game,850 -(20 + 830) );task.wait(0.4 + 0 );v16=false;return;end if v143 then v3:SendKeyEvent(true,Enum.KeyCode.Space,false,game);task.wait(126.03 -(116 + 10) );v3:SendKeyEvent(false,Enum.KeyCode.Space,false,game);task.wait(0.03 + 0 );end v230=nil;v227=740 -(542 + 196) ;end if (3==v227) then task.wait(0.05 -0 );v3:SendMouseButtonEvent(0 + 0 ,0 + 0 ,1 + 0 ,false,game,0 -0 );if v230 then local v281=0 -0 ;while true do if (v281==(1551 -(1126 + 425))) then task.wait(0.03);v3:SendKeyEvent(false,v230,false,game);break;end end end v227=409 -(118 + 287) ;end if (v227==(7 -5)) then if v141 then v230=Enum.KeyCode.A;elseif v142 then v230=Enum.KeyCode.D;end if v230 then v3:SendKeyEvent(true,v230,false,game);task.wait(0.02);end v3:SendMouseButtonEvent(1121 -(118 + 1003) ,0,1,true,game,0 -0 );v227=380 -(142 + 235) ;end end end);break;end end end local function v73(v146) local v147=0 -0 ;local v148;local v149;while true do if (v147==(2 + 3)) then v149.Parent=v148;return v148;end if (v147==(981 -(553 + 424))) then v149.TextSize=10;v149.TextStrokeTransparency=0.2;v149.TextStrokeColor3=Color3.fromRGB(0 -0 ,0 + 0 ,0 + 0 );v147=3 + 2 ;end if (v147==(2 + 1)) then v149.Text=v146.DisplayName   .. "\n[0m]" ;v149.TextColor3=Color3.fromRGB(146 + 109 ,552 -297 ,255);v149.Font=Enum.Font.GothamBold;v147=11 -7 ;end if (v147==2) then v149.Name="ESPLabel";v149.Size=UDim2.new(1,0,2 -1 ,0 + 0 );v149.BackgroundTransparency=4 -3 ;v147=3;end if (v147==(754 -(239 + 514))) then v148.Size=UDim2.new(0,100,0,9 + 15 );v148.ExtentsOffset=Vector3.new(0,1331.5 -(797 + 532) ,0 + 0 );v149=Instance.new("TextLabel");v147=1 + 1 ;end if (v147==0) then v148=Instance.new("BillboardGui");v148.Name="CleanPlayerESP";v148.AlwaysOnTop=true;v147=2 -1 ;end end end local function v74() local v150=1202 -(373 + 829) ;local v151;local v152;while true do if (v150==(731 -(476 + 255))) then v151=Instance.new("BillboardGui");v151.Name="CleanBallESP";v151.AlwaysOnTop=true;v150=1131 -(369 + 761) ;end if (3==v150) then v152.Text="⚽ BÓNG [0m]";v152.TextColor3=Color3.fromRGB(255,128 + 92 ,90 -40 );v152.Font=Enum.Font.GothamBold;v150=7 -3 ;end if (v150==5) then v152.Parent=v151;return v151;end if (v150==1) then v151.Size=UDim2.new(238 -(64 + 174) ,80,0 + 0 ,20);v151.ExtentsOffset=Vector3.new(0 -0 ,337.8 -(144 + 192) ,0);v152=Instance.new("TextLabel");v150=218 -(42 + 174) ;end if (v150==(2 + 0)) then v152.Name="BallLabel";v152.Size=UDim2.new(1 + 0 ,0 + 0 ,1,1504 -(363 + 1141) );v152.BackgroundTransparency=1581 -(1183 + 397) ;v150=8 -5 ;end if (v150==4) then v152.TextSize=11;v152.TextStrokeTransparency=0.2 + 0 ;v152.TextStrokeColor3=Color3.fromRGB(0 + 0 ,1975 -(1913 + 62) ,0 + 0 );v150=5;end end end v2.Heartbeat:Connect(function() local v153=v7.Character;local v154=v153 and v153:FindFirstChild("HumanoidRootPart") ;local v155=v69();if (v155 and v14) then local v180=(v155:IsA("Model") and (v155.PrimaryPart or v155:FindFirstChildWhichIsA("BasePart"))) or v155 ;if v180 then local v231=v180:FindFirstChild("CleanBallESP") or v74() ;v231.Parent=v180;local v233=v180:FindFirstChild("BallHighlight");if  not v233 then local v261=0 -0 ;while true do if (v261==(1933 -(565 + 1368))) then v233=Instance.new("Highlight");v233.Name="BallHighlight";v261=3 -2 ;end if (v261==(1663 -(1477 + 184))) then v233.FillTransparency=0.4;v233.Parent=v180;break;end if (v261==(1 -0)) then v233.FillColor=Color3.fromRGB(238 + 17 ,200,0);v233.OutlineColor=Color3.fromRGB(1111 -(564 + 292) ,439 -184 ,768 -513 );v261=306 -(244 + 60) ;end end end if v154 then local v262=math.floor((v180.Position-v154.Position).Magnitude/(3 + 0) );v231.BallLabel.Text="⚽ BÓNG ["   .. tostring(v262)   .. "m]" ;end end elseif v155 then local v234=476 -(41 + 435) ;local v235;while true do if ((1001 -(938 + 63))==v234) then v235=(v155:IsA("Model") and (v155.PrimaryPart or v155:FindFirstChildWhichIsA("BasePart"))) or v155 ;if v235 then if v235:FindFirstChild("CleanBallESP") then v235.CleanBallESP:Destroy();end if v235:FindFirstChild("BallHighlight") then v235.BallHighlight:Destroy();end end break;end end end local v156=v70(v7);for v169,v170 in ipairs(v1:GetPlayers()) do if ((v170~=v7) and v170.Character and v170.Character:FindFirstChild("HumanoidRootPart")) then local v220=v170.Character;local v221=v220.HumanoidRootPart;if v15 then local v240=v221:FindFirstChild("CleanPlayerESP") or v73(v170) ;v240.Parent=v221;local v242=v70(v170);local v243=(v156~="NoTeam") and (v242~="NoTeam") and (v156==v242) ;local v244=(v243 and Color3.fromRGB(39 + 11 ,1305 -(936 + 189) ,84 + 171 )) or Color3.fromRGB(255,1663 -(1565 + 48) ,31 + 19 ) ;v240.ESPLabel.TextColor3=v244;local v246=v220:FindFirstChild("TeamCircle");if  not v246 then v246=Instance.new("Highlight");v246.Name="TeamCircle";v246.FillTransparency=1138.6 -(782 + 356) ;v246.OutlineTransparency=0.2;v246.Parent=v220;end v246.FillColor=v244;v246.OutlineColor=v244;if v154 then local v272=math.floor((v221.Position-v154.Position).Magnitude/3 );v240.ESPLabel.Text=v170.DisplayName   .. "\n["   .. tostring(v272)   .. "m]" ;end else local v249=0;while true do if (v249==(267 -(176 + 91))) then if v221:FindFirstChild("CleanPlayerESP") then v221.CleanPlayerESP:Destroy();end if v220:FindFirstChild("TeamCircle") then v220.TeamCircle:Destroy();end break;end end end end end end);v2.RenderStepped:Connect(function(v157) local v158=0 -0 ;local v159;local v160;local v161;local v162;local v163;local v164;local v165;local v166;while true do if (v158==(2 -0)) then v164=tick();if (v163 and v18) then local v250=v164-v19 ;if (v250>0) then v20=(v163-v18)/v250 ;end end v18=v163;v158=1095 -(975 + 117) ;end if (v158==(1875 -(157 + 1718))) then v159=v7.Character;v160=v159 and v159:FindFirstChildOfClass("Humanoid") ;v161=v159 and v159:FindFirstChild("HumanoidRootPart") ;v158=1 + 0 ;end if (v158==(14 -10)) then v165=v71();v166=v165 and v68(v165) ;if (v12 and v163 and v166 and  not v32 and  not v16) then local v251=0 -0 ;local v252;while true do if (v251==0) then v252=(v163-v166).Magnitude;if (v252<=v9.POSITIONING_DIST) then local v293=v166 + ((v163-v166).Unit * 6) ;local v294=v293-v161.Position ;if (v294.Magnitude>1.2) then v160:Move(v294.Unit,false);end end break;end end end v158=5;end if (v158==(1019 -(697 + 321))) then if (v21 and v13 and v32 and (v31.Magnitude>(0.05 -0)) and v160) then local v253=v8.CFrame;local v254=Vector3.new(v253.LookVector.X,0 -0 ,v253.LookVector.Z).Unit;local v255=Vector3.new(v253.RightVector.X,0 -0 ,v253.RightVector.Z).Unit;local v256=(v255 * v31.X) + (v254 *  -v31.Y) ;v160:Move(v256,false);end v162=v69();v163=v68(v162);v158=2;end if ((2 + 1)==v158) then v19=v164;if (v11 and v163) then v
-8.CFrame=CFrame.new(v8.CFrame.Position,v163);end if ( not v161 or  not v160) then return;end v158=4;end if (v158==5) then if (v10 and v163 and v166 and  not v16) then local v258=v20.Magnitude;if (v258>=v9.MIN_BALL_SPEED) then local v274=(v166-v163).Unit;if (v20.Unit:Dot(v274)>(0.15 -0)) then local v288=v9.PREDICTION_TIME;local v289=v163 + (v20 * v288) + Vector3.new(0 -0 , -(1227.5 -(322 + 905)) * v9.GRAVITY * (v288^2) ,611 -(602 + 9) ) ;local v290=(v289-v166).Magnitude;if (v290<=v9.BALL_SAVE_DIST) then local v297=v161.CFrame;local v298=v297:PointToObjectSpace(v289);local v299=(v289-v161.Position).Magnitude;if (v299<=v9.CATCH_RADIUS) then local v300=v298.Y>v9.HIGH_SHOT_THRESHOLD ;v72(v289,false,false,v300,true);else local v301=1189 -(449 + 740) ;local v302;local v303;local v304;while true do if (v301==0) then v302=v298.X< -v9.LEFT_RIGHT_THRESHOLD ;v303=v298.X>v9.LEFT_RIGHT_THRESHOLD ;v301=1;end if (v301==1) then v304=v298.Y>v9.HIGH_SHOT_THRESHOLD ;if (v302 or v303 or v304) then v72(v289,v302,v303,v304,false);end break;end end end end end end end break;end end end);
+local v0 = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pitaya-real/PitayaUI/refs/heads/main/Pitayauisource.lua"))();
+local v1 = game:GetService("Players");
+local v2 = game:GetService("RunService");
+local v3 = game:GetService("VirtualInputManager");
+local v4 = game:GetService("UserInputService");
+local v5 = game:GetService("Workspace");
+local v6 = game:GetService("CoreGui");
+local v7 = v1.LocalPlayer;
+local v8 = v5.CurrentCamera;
+local v9 = {GOAL_DETECTION_DIST=70,BALL_SAVE_DIST=35,PREDICTION_TIME=0.32,COOLDOWN=1,LEFT_RIGHT_THRESHOLD=2,HIGH_SHOT_THRESHOLD=2.5,CATCH_RADIUS=4.5,POSITIONING_DIST=45,MIN_BALL_SPEED=6,GRAVITY=196.2};
+local v10 = false;
+local v11 = false;
+local v12 = false;
+local v13 = true;
+local v14 = false;
+local v15 = false;
+local v16 = false;
+local v17 = false;
+local v18 = nil;
+local v19 = 0;
+local v20 = Vector3.zero;
+local v21 = v4.TouchEnabled and not v4.KeyboardEnabled;
+local v22 = v0:CreateWindow({Title="Smart GK System | PITAYA HUB",Logo="rbxassetid://73866843639743",Theme="PitayaUI",Font="Gotham",Loading=true,LoadingTitle="<b>Smart GK BETA</b> PITAYA REAL"});
+local v23;
+if gethui then
+	v23 = gethui();
+elseif ((syn and syn.protect_gui) or (4593 <= 2672)) then
+	v23 = Instance.new("Folder");
+	syn.protect_gui(v23);
+	v23.Parent = v6;
+else
+	local v219, v220 = pcall(function()
+		local v227 = v6.Name;
+	end);
+	if v219 then
+		v23 = v6;
+	else
+		v23 = v7:WaitForChild("PlayerGui");
+	end
+end
+local v24 = Instance.new("ScreenGui");
+v24.Name = "SmartGKMobileControls_Protect";
+v24.ResetOnSpawn = false;
+v24.DisplayOrder = 9999;
+v24.Parent = v23;
+if not v21 then
+	v24.Enabled = false;
+end
+local v29 = {};
+local function v30(v75, v76, v77, v78, v79, v80, v81)
+	local v82 = Instance.new("Frame");
+	v82.Name = v75;
+	v82.Size = v78;
+	v82.Position = v77;
+	v82.BackgroundColor3 = v79;
+	v82.BackgroundTransparency = 0.3;
+	v82.ZIndex = 60;
+	v82.Parent = v24;
+	local v90 = Instance.new("UICorner");
+	v90.CornerRadius = UDim.new(1, 0);
+	v90.Parent = v82;
+	local v93 = Instance.new("UIStroke");
+	v93.Color = Color3.fromRGB(255, 255, 255);
+	v93.Thickness = 2;
+	v93.Transparency = 0.3;
+	v93.Parent = v82;
+	local v98 = Instance.new("TextLabel");
+	v98.Size = UDim2.new(1, 0, 1, 0);
+	v98.BackgroundTransparency = 1;
+	v98.Text = v76;
+	v98.TextColor3 = Color3.fromRGB(255, 255, 255);
+	v98.TextSize = 13;
+	v98.Font = Enum.Font.SourceSansBold;
+	v98.ZIndex = 61;
+	v98.Parent = v82;
+	v82.InputBegan:Connect(function(v189)
+		if ((v189.UserInputType == Enum.UserInputType.Touch) or (v189.UserInputType == Enum.UserInputType.MouseButton1) or (1168 > 3156)) then
+			v29[v189] = {btn=v82,onRelease=v81};
+			if (v80 or (572 > 4486)) then
+				v80(v82);
+			end
+		end
+	end);
+	return v82;
+end
+v4.InputEnded:Connect(function(v108)
+	if v29[v108] then
+		local v198 = v29[v108];
+		if v198.onRelease then
+			v198.onRelease(v198.btn);
+		end
+		v29[v108] = nil;
+	end
+end);
+v30("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(200, 100, 30), function(v109)
+	v17 = not v17;
+	v109.BackgroundColor3 = (v17 and Color3.fromRGB(50, 180, 50)) or Color3.fromRGB(200, 100, 30);
+	v3:SendKeyEvent(v17, Enum.KeyCode.LeftShift, false, game);
+end, nil);
+v30("JumpBtn", "Nhảy", UDim2.new(0.85, 0, 0.65, 0), UDim2.new(0, 68, 0, 68), Color3.fromRGB(40, 40, 40), function()
+	v3:SendKeyEvent(true, Enum.KeyCode.Space, false, game);
+end, function()
+	v3:SendKeyEvent(false, Enum.KeyCode.Space, false, game);
+end);
+v30("DiveBtn", "Bay người", UDim2.new(0.72, 0, 0.68, 0), UDim2.new(0, 64, 0, 64), Color3.fromRGB(30, 30, 30), function()
+	v3:SendKeyEvent(true, Enum.KeyCode.E, false, game);
+end, function()
+	v3:SendKeyEvent(false, Enum.KeyCode.E, false, game);
+end);
+v30("ShootBtn", "Sút", UDim2.new(0.74, 0, 0.45, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30), function()
+	v3:SendMouseButtonEvent(0, 0, 0, true, game, 0);
+end, function()
+	v3:SendMouseButtonEvent(0, 0, 0, false, game, 0);
+end);
+v30("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30), function()
+	v3:SendMouseButtonEvent(0, 0, 1, true, game, 0);
+end, function()
+	v3:SendMouseButtonEvent(0, 0, 1, false, game, 0);
+end);
+local v31 = Vector2.zero;
+local v32 = nil;
+local v33 = Instance.new("ImageButton");
+v33.Name = "JoystickBase";
+v33.Size = UDim2.new(0, 130, 0, 130);
+v33.Position = UDim2.new(0.05, 0, 0.52, 0);
+v33.BackgroundColor3 = Color3.fromRGB(20, 20, 20);
+v33.BackgroundTransparency = 0.5;
+v33.ZIndex = 60;
+v33.Active = true;
+v33.Modal = true;
+v33.AutoButtonColor = false;
+v33.Image = "";
+v33.Parent = v24;
+local v45 = Instance.new("UICorner");
+v45.CornerRadius = UDim.new(1, 0);
+v45.Parent = v33;
+local v48 = Instance.new("UIStroke");
+v48.Color = Color3.fromRGB(255, 255, 255);
+v48.Thickness = 2;
+v48.Transparency = 0.4;
+v48.Parent = v33;
+local v53 = Instance.new("Frame");
+v53.Name = "JoystickThumb";
+v53.Size = UDim2.new(0, 50, 0, 50);
+v53.Position = UDim2.new(0.5, -25, 0.5, -25);
+v53.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+v53.BackgroundTransparency = 0.2;
+v53.ZIndex = 61;
+v53.Parent = v33;
+local v61 = Instance.new("UICorner");
+v61.CornerRadius = UDim.new(1, 0);
+v61.Parent = v53;
+local function v64()
+	v32 = nil;
+	v31 = Vector2.zero;
+	v53.Position = UDim2.new(0.5, -25, 0.5, -25);
+end
+v33.InputBegan:Connect(function(v113)
+	if ((1404 == 1404) and ((v113.UserInputType == Enum.UserInputType.Touch) or (v113.UserInputType == Enum.UserInputType.MouseButton1)) and not v32) then
+		v32 = v113;
+	end
+end);
+v4.InputChanged:Connect(function(v114)
+	if ((v32 and ((v114 == v32) or (v114.UserInputType == Enum.UserInputType.MouseMovement))) or (3748 < 2212)) then
+		local v200 = v33.AbsolutePosition + (v33.AbsoluteSize / 2);
+		local v201 = Vector2.new(v114.Position.X, v114.Position.Y);
+		local v202 = v201 - v200;
+		local v203 = v33.AbsoluteSize.X / 2;
+		if (v202.Magnitude > v203) then
+			v202 = v202.Unit * v203;
+		end
+		v53.Position = UDim2.new(0.5, v202.X - 25, 0.5, v202.Y - 25);
+		v31 = v202 / v203;
+	end
+end);
+v4.InputEnded:Connect(function(v115)
+	if ((v115 == v32) or (v115.UserInputType == Enum.UserInputType.MouseButton1) or (1180 == 2180)) then
+		v64();
+	end
+end);
+local v65 = v22:CreateTab("Smart GK", "⚽");
+v65:AddLabel("--- Tự Động Thủ Môn ---", {BoldText=true});
+v65:AddToggle({Text="Tự Động Bắt Bóng (Auto Save)",BoldText=true,Default=false,Callback=function(v116)
+	v10 = v116;
+	v22:Notify("Smart GK", "Auto Save: " .. ((v116 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
+end});
+v65:AddToggle({Text="Tự Động Khép Góc Khung Thành",BoldText=true,Default=false,Callback=function(v117)
+	v12 = v117;
+	v22:Notify("Smart GK", "Tự Khép Góc: " .. ((v117 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
+end});
+v65:AddToggle({Text="Khóa Camera Vào Bóng (Cam Lock)",BoldText=true,Default=false,Callback=function(v118)
+	v11 = v118;
+	v22:Notify("Smart GK", "Cam Lock: " .. ((v118 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
+end});
+local v66 = v22:CreateTab("Hiển Thị", "👁️");
+v66:AddLabel("--- ESP Tinh Gọn (Minimalist) ---", {BoldText=true});
+v66:AddToggle({Text="ESP Trái Bóng (Mini Ball Marker)",BoldText=true,Default=false,Callback=function(v119)
+	v14 = v119;
+	v22:Notify("ESP", "ESP Bóng: " .. ((v119 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
+end});
+v66:AddToggle({Text="ESP Cầu Thủ (Leaderboard Team ESP)",BoldText=true,Default=false,Callback=function(v120)
+	v15 = v120;
+	v22:Notify("ESP", "ESP Cầu Thủ: " .. ((v120 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
+end});
+local v67 = v22:CreateTab("Điều Khiển", "🎮");
+v67:AddLabel("--- Phím Tắt Ảo Mobile ---", {BoldText=true});
+v67:AddToggle({Text="Hiển Thị Nút Điều Khiển Mobile",BoldText=true,Default=v21,Callback=function(v121)
+	v13 = v121;
+	v24.Enabled = v121 and v21;
+	if ((4090 < 4653) and not v121) then
+		v64();
+	end
+end});
+v67:AddButton({Text="Reset Vị Trí Joystick",BoldText=true,Callback=function()
+	v64();
+	v22:Notify("Hệ Thống", "Đã đặt lại Joystick!", 2);
+end});
+task.spawn(function()
+	local v123 = v7:WaitForChild("PlayerGui");
+	local function v124()
+		for v205, v206 in ipairs(v123:GetChildren()) do
+			if ((v206:IsA("ScreenGui") and not v206.Name:find("Protect") and (v206.Name ~= "PitayaUI")) or (2652 < 196)) then
+				for v236, v237 in ipairs(v206:GetDescendants()) do
+					if v237:IsA("GuiObject") then
+						local v259 = v237.Name:lower();
+						if ((4135 < 4817) and (v259:find("key") or v259:find("bind") or v259:find("pc") or v259:find("control"))) then
+							v237.Visible = false;
+						end
+					end
+				end
+			end
+		end
+	end
+	v124();
+	v123.ChildAdded:Connect(function()
+		task.wait(0.3);
+		v124();
+	end);
+end);
+local function v68(v125)
+	if ((272 == 272) and not v125) then
+		return nil;
+	end
+	if ((100 <= 3123) and v125:IsA("BasePart")) then
+		return v125.Position;
+	elseif v125:IsA("Model") then
+		return (v125.PrimaryPart and v125.PrimaryPart.Position) or v125:GetPivot().Position;
+	end
+	return nil;
+end
+local function v69()
+	local v126 = v5:FindFirstChild("Misc");
+	if v126 then
+		local v207 = v126:FindFirstChild("Visuals");
+		if (v207 or (1369 > 4987)) then
+			local v228 = v207:FindFirstChild("ClientBall_MainMatch");
+			if (v228 or (863 >= 4584)) then
+				if v228:IsA("BasePart") then
+					return v228;
+				end
+				if v228:IsA("Model") then
+					return v228.PrimaryPart or v228:FindFirstChildWhichIsA("BasePart") or v228;
+				end
+			end
+			return v207:FindFirstChildWhichIsA("BasePart");
+		end
+	end
+	return nil;
+end
+local function v70(v127)
+	if not v127 then
+		return nil;
+	end
+	if v127.Team then
+		return v127.Team.Name;
+	end
+	local v128 = v127:FindFirstChild("leaderstats");
+	if (v128 or (724 >= 1668)) then
+		local v208 = v128:FindFirstChild("Team") or v128:FindFirstChild("Đội");
+		if v208 then
+			return tostring(v208.Value);
+		end
+	end
+	local v129 = v127:FindFirstChild("TeamValue") or v127:FindFirstChild("TeamName");
+	if ((428 < 1804) and v129) then
+		return tostring(v129.Value);
+	end
+	return "NoTeam";
+end
+local function v71()
+	local v130 = v7.Character;
+	if (not v130 or (3325 > 4613)) then
+		return nil;
+	end
+	local v131 = v68(v130:FindFirstChild("HumanoidRootPart"));
+	if (not v131 or (4950 <= 4553)) then
+		return nil;
+	end
+	local v132 = v5:FindFirstChild("Map");
+	if ((2665 <= 3933) and (not v132 or not v132:FindFirstChild("Data"))) then
+		return nil;
+	end
+	local v133 = nil;
+	local v134 = v9.GOAL_DETECTION_DIST;
+	for v190, v191 in ipairs({"Team1","Team2"}) do
+		local v192 = v132.Data:FindFirstChild(v191);
+		if ((3273 == 3273) and v192) then
+			local v222 = v192:FindFirstChild("GoalMesh") or v192:FindFirstChild("Goal") or v192:FindFirstChild("Goalkeeper");
+			if ((3824 > 409) and v222) then
+				local v238 = v68(v222);
+				if v238 then
+					local v260 = (v131 - v238).Magnitude;
+					if ((2087 == 2087) and (v260 < v134)) then
+						v134 = v260;
+						v133 = v222;
+					end
+				end
+			end
+		end
+	end
+	return v133;
+end
+local function v72(v135, v136, v137, v138, v139)
+	if v16 then
+		return;
+	end
+	v16 = true;
+	task.spawn(function()
+		local v193 = v7.Character;
+		local v194 = v193 and v193:FindFirstChild("HumanoidRootPart");
+		if v194 then
+			v194.CFrame = CFrame.new(v194.Position, Vector3.new(v135.X, v194.Position.Y, v135.Z));
+		end
+		if (v139 or (3404 > 4503)) then
+			if (v138 or (3506 <= 1309)) then
+				v3:SendKeyEvent(true, Enum.KeyCode.Space, false, game);
+				task.wait(0.03);
+				v3:SendKeyEvent(false, Enum.KeyCode.Space, false, game);
+			end
+			v3:SendMouseButtonEvent(0, 0, 0, true, game, 0);
+			task.wait(0.05);
+			v3:SendMouseButtonEvent(0, 0, 0, false, game, 0);
+			task.wait(0.4);
+			v16 = false;
+			return;
+		end
+		if ((2955 == 2955) and v138) then
+			v3:SendKeyEvent(true, Enum.KeyCode.Space, false, game);
+			task.wait(0.03);
+			v3:SendKeyEvent(false, Enum.KeyCode.Space, false, game);
+			task.wait(0.03);
+		end
+		local v195 = nil;
+		if (v136 or (2903 == 1495)) then
+			v195 = Enum.KeyCode.A;
+		elseif v137 then
+			v195 = Enum.KeyCode.D;
+		end
+		if v195 then
+			v3:SendKeyEvent(true, v195, false, game);
+			task.wait(0.02);
+		end
+		v3:SendMouseButtonEvent(0, 0, 1, true, game, 0);
+		task.wait(0.05);
+		v3:SendMouseButtonEvent(0, 0, 1, false, game, 0);
+		if ((4546 >= 2275) and v195) then
+			task.wait(0.03);
+			v3:SendKeyEvent(false, v195, false, game);
+		end
+		task.wait(v9.COOLDOWN);
+		v16 = false;
+	end);
+end
+local function v73(v140)
+	local v141 = Instance.new("BillboardGui");
+	v141.Name = "CleanPlayerESP";
+	v141.AlwaysOnTop = true;
+	v141.Size = UDim2.new(0, 100, 0, 24);
+	v141.ExtentsOffset = Vector3.new(0, 2.5, 0);
+	local v146 = Instance.new("TextLabel");
+	v146.Name = "ESPLabel";
+	v146.Size = UDim2.new(1, 0, 1, 0);
+	v146.BackgroundTransparency = 1;
+	v146.Text = v140.DisplayName .. "\n[0m]";
+	v146.TextColor3 = Color3.fromRGB(255, 255, 255);
+	v146.Font = Enum.Font.GothamBold;
+	v146.TextSize = 10;
+	v146.TextStrokeTransparency = 0.2;
+	v146.TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
+	v146.Parent = v141;
+	return v141;
+end
+local function v74()
+	local v158 = Instance.new("BillboardGui");
+	v158.Name = "CleanBallESP";
+	v158.AlwaysOnTop = true;
+	v158.Size = UDim2.new(0, 80, 0, 20);
+	v158.ExtentsOffset = Vector3.new(0, 1.8, 0);
+	local v163 = Instance.new("TextLabel");
+	v163.Name = "BallLabel";
+	v163.Size = UDim2.new(1, 0, 1, 0);
+	v163.BackgroundTransparency = 1;
+	v163.Text = "⚽ BÓNG [0m]";
+	v163.TextColor3 = Color3.fromRGB(255, 220, 50);
+	v163.Font = Enum.Font.GothamBold;
+	v163.TextSize = 11;
+	v163.TextStrokeTransparency = 0.2;
+	v163.TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
+	v163.Parent = v158;
+	return v158;
+end
+v2.Heartbeat:Connect(function()
+	local v175 = v7.Character;
+	local v176 = v175 and v175:FindFirstChild("HumanoidRootPart");
+	local v177 = v69();
+	if ((819 >= 22) and v177 and v14) then
+		local v209 = (v177:IsA("Model") and (v177.PrimaryPart or v177:FindFirstChildWhichIsA("BasePart"))) or v177;
+		if ((3162 == 3162) and v209) then
+			local v229 = v209:FindFirstChild("CleanBallESP") or v74();
+			v229.Parent = v209;
+			local v231 = v209:FindFirstChild("BallHighlight");
+			if (not v231 or (2369 > 4429)) then
+				v231 = Instance.new("Highlight");
+				v231.Name = "BallHighlight";
+				v231.FillColor = Color3.fromRGB(255, 200, 0);
+				v231.OutlineColor = Color3.fromRGB(255, 255, 255);
+				v231.FillTransparency = 0.4;
+				v231.Parent = v209;
+			end
+			if v176 then
+				local v254 = math.floor((v209.Position - v176.Position).Magnitude / 3);
+				v229.BallLabel.Text = "⚽ BÓNG [" .. tostring(v254) .. "m]";
+			end
+		end
+	elseif ((4095 >= 3183) and v177) then
+		local v232 = (v177:IsA("Model") and (v177.PrimaryPart or v177:FindFirstChildWhichIsA("BasePart"))) or v177;
+		if v232 then
+			if v232:FindFirstChild("CleanBallESP") then
+				v232.CleanBallESP:Destroy();
+			end
+			if (v232:FindFirstChild("BallHighlight") or (3711 < 1008)) then
+				v232.BallHighlight:Destroy();
+			end
+		end
+	end
+	local v178 = v70(v7);
+	for v196, v197 in ipairs(v1:GetPlayers()) do
+		if ((v197 ~= v7) and v197.Character and v197.Character:FindFirstChild("HumanoidRootPart")) then
+			local v225 = v197.Character;
+			local v226 = v225.HumanoidRootPart;
+			if (v15 or (1049 <= 906)) then
+				local v240 = v226:FindFirstChild("CleanPlayerESP") or v73(v197);
+				v240.Parent = v226;
+				local v242 = v70(v197);
+				local v243 = (v178 ~= "NoTeam") and (v242 ~= "NoTeam") and (v178 == v242);
+				local v244 = (v243 and Color3.fromRGB(50, 180, 255)) or Color3.fromRGB(255, 50, 50);
+				v240.ESPLabel.TextColor3 = v244;
+				local v246 = v225:FindFirstChild("TeamCircle");
+				if not v246 then
+					v246 = Instance.new("Highlight");
+					v246.Name = "TeamCircle";
+					v246.FillTransparency = 0.6;
+					v246.OutlineTransparency = 0.2;
+					v246.Parent = v225;
+				end
+				v246.FillColor = v244;
+				v246.OutlineColor = v244;
+				if v176 then
+					local v265 = math.floor((v226.Position - v176.Position).Magnitude / 3);
+					v240.ESPLabel.Text = v197.DisplayName .. "\n[" .. tostring(v265) .. "m]";
+				end
+			else
+				if ((4513 > 2726) and v226:FindFirstChild("CleanPlayerESP")) then
+					v226.CleanPlayerESP:Destroy();
+				end
+				if v225:FindFirstChild("TeamCircle") then
+					v225.TeamCircle:Destroy();
+				end
+			end
+		end
+	end
+end);
+v2.RenderStepped:Connect(function(v179)
+	local v180 = v7.Character;
+	local v181 = v180 and v180:FindFirstChildOfClass("Humanoid");
+	local v182 = v180 and v180:FindFirstChild("HumanoidRootPart");
+	if (v21 and v13 and v32 and (v31.Magnitude > 0.05) and v181) then
+		local v210 = v8.CFrame;
+		local v211 = Vector3.new(v210.LookVector.X, 0, v210.LookVector.Z).Unit;
+		local v212 = Vector3.new(v210.RightVector.X, 0, v210.RightVector.Z).Unit;
+		local v213 = (v212 * v31.X) + (v211 * -v31.Y);
+		v181:Move(v213, false);
+	end
+	local v183 = v69();
+	local v184 = v68(v183);
+	local v185 = tick();
+	if ((v184 and v18) or (1481 >= 2658)) then
+		local v214 = v185 - v19;
+		if (v214 > 0) then
+			v20 = (v184 - v18) / v214;
+		end
+	end
+	v18 = v184;
+	v19 = v185;
+	if ((v11 and v184) or (3220 == 1364)) then
+		v8.CFrame = CFrame.new(v8.CFrame.Position, v184);
+	end
+	if (not v182 or not v181 or (1054 > 3392)) then
+		return;
+	end
+	local v186 = v71();
+	local v187 = v186 and v68(v186);
+	if ((v12 and v184 and v187 and not v32 and not v16) or (676 >= 1642)) then
+		local v216 = (v184 - v187).Magnitude;
+		if (v216 <= v9.POSITIONING_DIST) then
+			local v233 = v187 + ((v184 - v187).Unit * 6);
+			local v234 = v233 - v182.Position;
+			if (v234.Magnitude > 1.2) then
+				v181:Move(v234.Unit, false);
+			end
+		end
+	end
+	if ((4136 > 2397) and v10 and v184 and v187 and not v16) then
+		local v217 = v20.Magnitude;
+		if ((v217 >= v9.MIN_BALL_SPEED) or (4334 == 4245)) then
+			local v235 = (v187 - v184).Unit;
+			if ((v20.Unit:Dot(v235) > 0.15) or (4276 <= 3031)) then
+				local v256 = v9.PREDICTION_TIME;
+				local v257 = v184 + (v20 * v256) + Vector3.new(0, -0.5 * v9.GRAVITY * (v256 ^ 2), 0);
+				local v258 = (v257 - v187).Magnitude;
+				if ((v258 <= v9.BALL_SAVE_DIST) or (4782 <= 1199)) then
+					local v267 = v182.CFrame;
+					local v268 = v267:PointToObjectSpace(v257);
+					local v269 = (v257 - v182.Position).Magnitude;
+					if ((v269 <= v9.CATCH_RADIUS) or (4864 < 1902)) then
+						local v271 = v268.Y > v9.HIGH_SHOT_THRESHOLD;
+						v72(v257, false, false, v271, true);
+					else
+						local v272 = v268.X < -v9.LEFT_RIGHT_THRESHOLD;
+						local v273 = v268.X > v9.LEFT_RIGHT_THRESHOLD;
+						local v274 = v268.Y > v9.HIGH_SHOT_THRESHOLD;
+						if ((4839 >= 3700) and (v272 or v273 or v274)) then
+							v72(v257, v272, v273, v274, false);
+						end
+					end
+				end
+			end
+		end
+	end
+end);
