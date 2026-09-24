@@ -285,9 +285,23 @@ animateButton(GetKeyBtn, Color3.fromRGB(30, 41, 59), Color3.fromRGB(51, 65, 85))
 -- SỰ KIỆN XỬ LÝ LOGIC KEY SYSTEM
 -- ==========================================
 
+-- Hàm băm chuỗi đơn giản để tạo Token cố định theo HWID + Ngày
+local function generateDailyToken(hwid)
+    local currentDate = os.date("!%Y-%m-%d") -- Lấy ngày hiện tại (UTC)
+    local rawString = hwid .. "_" .. currentDate
+    local hash = 0
+    for i = 1, #rawString do
+        local char = string.byte(rawString, i)
+        hash = (hash * 31 + char) % 4294967296
+    end
+    return "TK_" .. string.format("%X", hash)
+end
+
 -- 1. BẤM NÚT LẤY KEY
 GetKeyBtn.MouseButton1Click:Connect(function()
-    local generatedToken = "TK_" .. tostring(math.random(100000, 999999)) .. "_" .. tostring(os.time())
+    -- Tạo token cố định dựa trên HWID và Ngày (Cùng 1 máy trong ngày bấm bao nhiêu lần vẫn ra 1 Token)
+    local generatedToken = generateDailyToken(HWID)
+    
     local targetUrl = RENDER_URL .. "/getkey?hwid=" .. HWID .. "&token=" .. generatedToken
     local encodedTarget = HttpService:UrlEncode(targetUrl)
     local fullLink = LINK4M_BASE .. encodedTarget
