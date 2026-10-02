@@ -1,561 +1,778 @@
---[[
- .____                  ________ ___.    _____                           __                
- |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
- |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
- |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
- |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
-         \/          \/         \/    \/                \/     \/     \/                   
-          \_Welcome to LuaObfuscator.com   (Alpha 0.10.9) ~  Much Love, Ferib 
+-- =================================================================
+-- SMART GK AUTO SAVE + MAGNET BALL SYSTEM - FIX BÓNG & BAY NGƯỜI
+-- =================================================================
 
-]]--
+-- 1. LOAD THƯ VIỆN PITAYA UI
+local PitayaUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pitaya-real/PitayaUI/refs/heads/main/Pitayauisource.lua"))()
 
-local v0 = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pitaya-real/PitayaUI/refs/heads/main/Pitayauisource.lua"))();
-local v1 = game:GetService("Players");
-local v2 = game:GetService("RunService");
-local v3 = game:GetService("VirtualInputManager");
-local v4 = game:GetService("UserInputService");
-local v5 = game:GetService("Workspace");
-local v6 = game:GetService("CoreGui");
-local v7 = v1.LocalPlayer;
-local v8 = v5.CurrentCamera;
-local v9 = {GOAL_DETECTION_DIST=70,BALL_SAVE_DIST=35,PREDICTION_TIME=0.32,COOLDOWN=1,LEFT_RIGHT_THRESHOLD=2,HIGH_SHOT_THRESHOLD=2.5,CATCH_RADIUS=4.5,POSITIONING_DIST=45,MIN_BALL_SPEED=6,GRAVITY=196.2};
-local v10 = false;
-local v11 = false;
-local v12 = false;
-local v13 = true;
-local v14 = false;
-local v15 = false;
-local v16 = false;
-local v17 = false;
-local v18 = nil;
-local v19 = 0;
-local v20 = Vector3.zero;
-local v21 = v4.TouchEnabled and not v4.KeyboardEnabled;
-local v22 = v0:CreateWindow({Title="Smart GK System | PITAYA HUB",Logo="rbxassetid://73866843639743",Theme="PitayaUI",Font="Gotham",Loading=true,LoadingTitle="<b>Smart GK BETA</b> PITAYA REAL"});
-local v23;
+-- 2. KHỞI TẠO CÁC SERVICE ROBLOX
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+-- ---------------------------------------------------------
+-- CẤU HÌNH & BIẾN TOÀN CỤC CỦA HỆ THỐNG SMART GK
+-- ---------------------------------------------------------
+local CONFIG = {
+    GOAL_DETECTION_DIST = 70,
+    BALL_SAVE_DIST = 35,
+    PREDICTION_TIME = 0.32,
+    COOLDOWN = 1.0,
+    LEFT_RIGHT_THRESHOLD = 2.0,
+    HIGH_SHOT_THRESHOLD = 2.5,
+    CATCH_RADIUS = 4.5,
+    POSITIONING_DIST = 45,
+    MIN_BALL_SPEED = 6,
+    GRAVITY = 196.2,
+    
+    -- Cấu hình Hút bóng (Magnet)
+    MAGNET_PULL_SPEED = 85,     -- Tốc độ hút bóng về người
+    OWNER_SAFE_RADIUS = 2.8     -- Bán kính xem bóng đã rời chân đối phương chưa (studs)
+}
+
+local autoSaveEnabled = false
+local autoMagnetEnabled = true -- Bật mặc định tính năng hút bóng nguy hiểm
+local cameraTrackEnabled = false
+local autoPositionEnabled = false
+local mobileControlsEnabled = true
+local espBallEnabled = false
+local espPlayersEnabled = false
+
+local isDiving = false
+local isSprinting = false
+
+local lastBallPos = nil
+local lastBallTime = 0
+local ballVelocity = Vector3.zero
+
+-- ---------------------------------------------------------
+-- 3. NHẬN DIỆN THIẾT BỊ (MOBILE VS PC)
+-- ---------------------------------------------------------
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+-- ---------------------------------------------------------
+-- 4. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
+-- ---------------------------------------------------------
+local Window = PitayaUI:CreateWindow({
+	Title = "Smart GK System | PITAYA HUB",
+	Logo = "rbxassetid://73866843639743",
+	Theme = "PitayaUI",
+	Font = "Gotham",
+	Loading = true,
+	LoadingTitle = "<b>Smart GK BETA</b> PITAYA REAL"
+})
+
+-- ---------------------------------------------------------
+-- 5. CHÈN UI VÀO COREGUI / PLAYERGUI
+-- ---------------------------------------------------------
+local parentContainer
 if gethui then
-	v23 = gethui();
-elseif ((syn and syn.protect_gui) or (4593 <= 2672)) then
-	v23 = Instance.new("Folder");
-	syn.protect_gui(v23);
-	v23.Parent = v6;
+    parentContainer = gethui()
+elseif syn and syn.protect_gui then
+    parentContainer = Instance.new("Folder")
+    syn.protect_gui(parentContainer)
+    parentContainer.Parent = CoreGui
 else
-	local v219, v220 = pcall(function()
-		local v227 = v6.Name;
-	end);
-	if v219 then
-		v23 = v6;
-	else
-		v23 = v7:WaitForChild("PlayerGui");
-	end
+    local success, _ = pcall(function() local a = CoreGui.Name end)
+    if success then
+        parentContainer = CoreGui
+    else
+        parentContainer = LocalPlayer:WaitForChild("PlayerGui")
+    end
 end
-local v24 = Instance.new("ScreenGui");
-v24.Name = "SmartGKMobileControls_Protect";
-v24.ResetOnSpawn = false;
-v24.DisplayOrder = 9999;
-v24.Parent = v23;
-if not v21 then
-	v24.Enabled = false;
+
+local MobileControlsGui = Instance.new("ScreenGui")
+MobileControlsGui.Name = "SmartGKMobileControls_Protect"
+MobileControlsGui.ResetOnSpawn = false
+MobileControlsGui.DisplayOrder = 9999
+MobileControlsGui.Parent = parentContainer
+
+if not isMobile then
+    MobileControlsGui.Enabled = false
 end
-local v29 = {};
-local function v30(v75, v76, v77, v78, v79, v80, v81)
-	local v82 = Instance.new("Frame");
-	v82.Name = v75;
-	v82.Size = v78;
-	v82.Position = v77;
-	v82.BackgroundColor3 = v79;
-	v82.BackgroundTransparency = 0.3;
-	v82.ZIndex = 60;
-	v82.Parent = v24;
-	local v90 = Instance.new("UICorner");
-	v90.CornerRadius = UDim.new(1, 0);
-	v90.Parent = v82;
-	local v93 = Instance.new("UIStroke");
-	v93.Color = Color3.fromRGB(255, 255, 255);
-	v93.Thickness = 2;
-	v93.Transparency = 0.3;
-	v93.Parent = v82;
-	local v98 = Instance.new("TextLabel");
-	v98.Size = UDim2.new(1, 0, 1, 0);
-	v98.BackgroundTransparency = 1;
-	v98.Text = v76;
-	v98.TextColor3 = Color3.fromRGB(255, 255, 255);
-	v98.TextSize = 13;
-	v98.Font = Enum.Font.SourceSansBold;
-	v98.ZIndex = 61;
-	v98.Parent = v82;
-	v82.InputBegan:Connect(function(v189)
-		if ((v189.UserInputType == Enum.UserInputType.Touch) or (v189.UserInputType == Enum.UserInputType.MouseButton1) or (1168 > 3156)) then
-			v29[v189] = {btn=v82,onRelease=v81};
-			if (v80 or (572 > 4486)) then
-				v80(v82);
-			end
-		end
-	end);
-	return v82;
+
+-- ---------------------------------------------------------
+-- 6. TẠO CÁC NÚT BẤM CẢM ỨNG ĐỘC LẬP
+-- ---------------------------------------------------------
+local touchRegistry = {}
+
+local function createSeamlessButton(name, text, pos, size, bgColor, onPress, onRelease)
+    local btn = Instance.new("Frame")
+    btn.Name = name
+    btn.Size = size
+    btn.Position = pos
+    btn.BackgroundColor3 = bgColor
+    btn.BackgroundTransparency = 0.3
+    btn.ZIndex = 60
+    btn.Parent = MobileControlsGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = btn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Thickness = 2
+    stroke.Transparency = 0.3
+    stroke.Parent = btn
+
+    local txtLabel = Instance.new("TextLabel")
+    txtLabel.Size = UDim2.new(1, 0, 1, 0)
+    txtLabel.BackgroundTransparency = 1
+    txtLabel.Text = text
+    txtLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    txtLabel.TextSize = 13
+    txtLabel.Font = Enum.Font.SourceSansBold
+    txtLabel.ZIndex = 61
+    txtLabel.Parent = btn
+
+    btn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            touchRegistry[input] = {
+                btn = btn,
+                onRelease = onRelease
+            }
+            if onPress then onPress(btn) end
+        end
+    end)
+
+    return btn
 end
-v4.InputEnded:Connect(function(v108)
-	if v29[v108] then
-		local v198 = v29[v108];
-		if v198.onRelease then
-			v198.onRelease(v198.btn);
-		end
-		v29[v108] = nil;
-	end
-end);
-v30("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(200, 100, 30), function(v109)
-	v17 = not v17;
-	v109.BackgroundColor3 = (v17 and Color3.fromRGB(50, 180, 50)) or Color3.fromRGB(200, 100, 30);
-	v3:SendKeyEvent(v17, Enum.KeyCode.LeftShift, false, game);
-end, nil);
-v30("JumpBtn", "Nhảy", UDim2.new(0.85, 0, 0.65, 0), UDim2.new(0, 68, 0, 68), Color3.fromRGB(40, 40, 40), function()
-	v3:SendKeyEvent(true, Enum.KeyCode.Space, false, game);
-end, function()
-	v3:SendKeyEvent(false, Enum.KeyCode.Space, false, game);
-end);
-v30("DiveBtn", "Bay người", UDim2.new(0.72, 0, 0.68, 0), UDim2.new(0, 64, 0, 64), Color3.fromRGB(30, 30, 30), function()
-	v3:SendKeyEvent(true, Enum.KeyCode.E, false, game);
-end, function()
-	v3:SendKeyEvent(false, Enum.KeyCode.E, false, game);
-end);
-v30("ShootBtn", "Sút", UDim2.new(0.74, 0, 0.45, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30), function()
-	v3:SendMouseButtonEvent(0, 0, 0, true, game, 0);
-end, function()
-	v3:SendMouseButtonEvent(0, 0, 0, false, game, 0);
-end);
-v30("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30), function()
-	v3:SendMouseButtonEvent(0, 0, 1, true, game, 0);
-end, function()
-	v3:SendMouseButtonEvent(0, 0, 1, false, game, 0);
-end);
-local v31 = Vector2.zero;
-local v32 = nil;
-local v33 = Instance.new("ImageButton");
-v33.Name = "JoystickBase";
-v33.Size = UDim2.new(0, 130, 0, 130);
-v33.Position = UDim2.new(0.05, 0, 0.52, 0);
-v33.BackgroundColor3 = Color3.fromRGB(20, 20, 20);
-v33.BackgroundTransparency = 0.5;
-v33.ZIndex = 60;
-v33.Active = true;
-v33.Modal = true;
-v33.AutoButtonColor = false;
-v33.Image = "";
-v33.Parent = v24;
-local v45 = Instance.new("UICorner");
-v45.CornerRadius = UDim.new(1, 0);
-v45.Parent = v33;
-local v48 = Instance.new("UIStroke");
-v48.Color = Color3.fromRGB(255, 255, 255);
-v48.Thickness = 2;
-v48.Transparency = 0.4;
-v48.Parent = v33;
-local v53 = Instance.new("Frame");
-v53.Name = "JoystickThumb";
-v53.Size = UDim2.new(0, 50, 0, 50);
-v53.Position = UDim2.new(0.5, -25, 0.5, -25);
-v53.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-v53.BackgroundTransparency = 0.2;
-v53.ZIndex = 61;
-v53.Parent = v33;
-local v61 = Instance.new("UICorner");
-v61.CornerRadius = UDim.new(1, 0);
-v61.Parent = v53;
-local function v64()
-	v32 = nil;
-	v31 = Vector2.zero;
-	v53.Position = UDim2.new(0.5, -25, 0.5, -25);
+
+UserInputService.InputEnded:Connect(function(input)
+    if touchRegistry[input] then
+        local data = touchRegistry[input]
+        if data.onRelease then data.onRelease(data.btn) end
+        touchRegistry[input] = nil
+    end
+end)
+
+-- Phím tắt ảo Mobile
+createSeamlessButton("ShiftBtn", "Shift", UDim2.new(0.58, 0, 0.68, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(200, 100, 30), 
+    function(btn)
+        isSprinting = not isSprinting
+        btn.BackgroundColor3 = isSprinting and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(200, 100, 30)
+        VirtualInputManager:SendKeyEvent(isSprinting, Enum.KeyCode.LeftShift, false, game)
+    end, nil
+)
+
+createSeamlessButton("JumpBtn", "Nhảy", UDim2.new(0.85, 0, 0.65, 0), UDim2.new(0, 68, 0, 68), Color3.fromRGB(40, 40, 40),
+    function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game) end,
+    function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end
+)
+
+createSeamlessButton("DiveBtn", "Bay người", UDim2.new(0.72, 0, 0.68, 0), UDim2.new(0, 64, 0, 64), Color3.fromRGB(30, 30, 30),
+    function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game) end,
+    function() VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game) end
+)
+
+createSeamlessButton("ShootBtn", "Sút", UDim2.new(0.74, 0, 0.45, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30),
+    function() VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0) end,
+    function() VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0) end
+)
+
+createSeamlessButton("PassBtn", "Chuyền", UDim2.new(0.85, 0, 0.42, 0), UDim2.new(0, 58, 0, 58), Color3.fromRGB(30, 30, 30),
+    function() VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0) end,
+    function() VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0) end
+)
+
+-- ---------------------------------------------------------
+-- JOYSTICK MOBILE
+-- ---------------------------------------------------------
+local moveVector = Vector2.zero
+local joystickTouchObject = nil
+
+local TouchBase = Instance.new("ImageButton")
+TouchBase.Name = "JoystickBase"
+TouchBase.Size = UDim2.new(0, 130, 0, 130)
+TouchBase.Position = UDim2.new(0.05, 0, 0.52, 0)
+TouchBase.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+TouchBase.BackgroundTransparency = 0.5
+TouchBase.ZIndex = 60
+TouchBase.Active = true
+TouchBase.Modal = true
+TouchBase.AutoButtonColor = false
+TouchBase.Image = ""
+TouchBase.Parent = MobileControlsGui
+
+local BaseCorner = Instance.new("UICorner")
+BaseCorner.CornerRadius = UDim.new(1, 0)
+BaseCorner.Parent = TouchBase
+
+local BaseStroke = Instance.new("UIStroke")
+BaseStroke.Color = Color3.fromRGB(255, 255, 255)
+BaseStroke.Thickness = 2
+BaseStroke.Transparency = 0.4
+BaseStroke.Parent = TouchBase
+
+local Thumb = Instance.new("Frame")
+Thumb.Name = "JoystickThumb"
+Thumb.Size = UDim2.new(0, 50, 0, 50)
+Thumb.Position = UDim2.new(0.5, -25, 0.5, -25)
+Thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Thumb.BackgroundTransparency = 0.2
+Thumb.ZIndex = 61
+Thumb.Parent = TouchBase
+
+local ThumbCorner = Instance.new("UICorner")
+ThumbCorner.CornerRadius = UDim.new(1, 0)
+ThumbCorner.Parent = Thumb
+
+local function resetJoystick()
+    joystickTouchObject = nil
+    moveVector = Vector2.zero
+    Thumb.Position = UDim2.new(0.5, -25, 0.5, -25)
 end
-v33.InputBegan:Connect(function(v113)
-	if ((1404 == 1404) and ((v113.UserInputType == Enum.UserInputType.Touch) or (v113.UserInputType == Enum.UserInputType.MouseButton1)) and not v32) then
-		v32 = v113;
+
+TouchBase.InputBegan:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) and not joystickTouchObject then
+        joystickTouchObject = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if joystickTouchObject and (input == joystickTouchObject or input.UserInputType == Enum.UserInputType.MouseMovement) then
+        local baseCenter = TouchBase.AbsolutePosition + (TouchBase.AbsoluteSize / 2)
+        local inputPos = Vector2.new(input.Position.X, input.Position.Y)
+        local delta = inputPos - baseCenter
+        local radius = TouchBase.AbsoluteSize.X / 2
+        
+        if delta.Magnitude > radius then
+            delta = delta.Unit * radius
+        end
+
+        Thumb.Position = UDim2.new(0.5, delta.X - 25, 0.5, delta.Y - 25)
+        moveVector = delta / radius
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input == joystickTouchObject or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        resetJoystick()
+    end
+end)
+
+-- ---------------------------------------------------------
+-- 7. PITAYA UI TABS
+-- ---------------------------------------------------------
+local GKTab = Window:CreateTab("Smart GK", "⚽")
+
+GKTab:AddLabel("--- Tự Động Thủ Môn ---", {BoldText = true})
+
+GKTab:AddToggle({
+	Text = "Tự Động Bắt Bóng (Auto Save)",
+	BoldText = true,
+	Default = false,
+	Callback = function(state)
+		autoSaveEnabled = state
+		Window:Notify("Smart GK", "Auto Save: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
 	end
-end);
-v4.InputChanged:Connect(function(v114)
-	if ((v32 and ((v114 == v32) or (v114.UserInputType == Enum.UserInputType.MouseMovement))) or (3748 < 2212)) then
-		local v200 = v33.AbsolutePosition + (v33.AbsoluteSize / 2);
-		local v201 = Vector2.new(v114.Position.X, v114.Position.Y);
-		local v202 = v201 - v200;
-		local v203 = v33.AbsoluteSize.X / 2;
-		if (v202.Magnitude > v203) then
-			v202 = v202.Unit * v203;
-		end
-		v53.Position = UDim2.new(0.5, v202.X - 25, 0.5, v202.Y - 25);
-		v31 = v202 / v203;
+})
+
+GKTab:AddToggle({
+	Text = "Tự Động Hút Bóng Nguy Hiểm (Magnet)",
+	BoldText = true,
+	Default = true,
+	Callback = function(state)
+		autoMagnetEnabled = state
+		Window:Notify("Smart GK", "Hút Bóng: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
 	end
-end);
-v4.InputEnded:Connect(function(v115)
-	if ((v115 == v32) or (v115.UserInputType == Enum.UserInputType.MouseButton1) or (1180 == 2180)) then
-		v64();
+})
+
+GKTab:AddToggle({
+	Text = "Tự Động Khép Góc Khung Thành",
+	BoldText = true,
+	Default = false,
+	Callback = function(state)
+		autoPositionEnabled = state
+		Window:Notify("Smart GK", "Tự Khép Góc: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
 	end
-end);
-local v65 = v22:CreateTab("Smart GK", "⚽");
-v65:AddLabel("--- Tự Động Thủ Môn ---", {BoldText=true});
-v65:AddToggle({Text="Tự Động Bắt Bóng (Auto Save)",BoldText=true,Default=false,Callback=function(v116)
-	v10 = v116;
-	v22:Notify("Smart GK", "Auto Save: " .. ((v116 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
-end});
-v65:AddToggle({Text="Tự Động Khép Góc Khung Thành",BoldText=true,Default=false,Callback=function(v117)
-	v12 = v117;
-	v22:Notify("Smart GK", "Tự Khép Góc: " .. ((v117 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
-end});
-v65:AddToggle({Text="Khóa Camera Vào Bóng (Cam Lock)",BoldText=true,Default=false,Callback=function(v118)
-	v11 = v118;
-	v22:Notify("Smart GK", "Cam Lock: " .. ((v118 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
-end});
-local v66 = v22:CreateTab("Hiển Thị", "👁️");
-v66:AddLabel("--- ESP Tinh Gọn (Minimalist) ---", {BoldText=true});
-v66:AddToggle({Text="ESP Trái Bóng (Mini Ball Marker)",BoldText=true,Default=false,Callback=function(v119)
-	v14 = v119;
-	v22:Notify("ESP", "ESP Bóng: " .. ((v119 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
-end});
-v66:AddToggle({Text="ESP Cầu Thủ (Leaderboard Team ESP)",BoldText=true,Default=false,Callback=function(v120)
-	v15 = v120;
-	v22:Notify("ESP", "ESP Cầu Thủ: " .. ((v120 and "<b>ĐÃ BẬT</b>") or "<b>ĐÃ TẮT</b>"), 2);
-end});
-local v67 = v22:CreateTab("Điều Khiển", "🎮");
-v67:AddLabel("--- Phím Tắt Ảo Mobile ---", {BoldText=true});
-v67:AddToggle({Text="Hiển Thị Nút Điều Khiển Mobile",BoldText=true,Default=v21,Callback=function(v121)
-	v13 = v121;
-	v24.Enabled = v121 and v21;
-	if ((4090 < 4653) and not v121) then
-		v64();
+})
+
+GKTab:AddToggle({
+	Text = "Khóa Camera Vào Bóng (Cam Lock)",
+	BoldText = true,
+	Default = false,
+	Callback = function(state)
+		cameraTrackEnabled = state
+		Window:Notify("Smart GK", "Cam Lock: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
 	end
-end});
-v67:AddButton({Text="Reset Vị Trí Joystick",BoldText=true,Callback=function()
-	v64();
-	v22:Notify("Hệ Thống", "Đã đặt lại Joystick!", 2);
-end});
+})
+
+local VisualTab = Window:CreateTab("Hiển Thị", "👁️")
+
+VisualTab:AddLabel("--- ESP Tinh Gọn (Minimalist) ---", {BoldText = true})
+
+VisualTab:AddToggle({
+	Text = "ESP Trái Bóng (Mini Ball Marker)",
+	BoldText = true,
+	Default = false,
+	Callback = function(state)
+		espBallEnabled = state
+		Window:Notify("ESP", "ESP Bóng: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
+	end
+})
+
+VisualTab:AddToggle({
+	Text = "ESP Cầu Thủ (Leaderboard Team ESP)",
+	BoldText = true,
+	Default = false,
+	Callback = function(state)
+		espPlayersEnabled = state
+		Window:Notify("ESP", "ESP Cầu Thủ: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
+	end
+})
+
+local ControlsTab = Window:CreateTab("Điều Khiển", "🎮")
+
+ControlsTab:AddLabel("--- Phím Tắt Ảo Mobile ---", {BoldText = true})
+
+ControlsTab:AddToggle({
+	Text = "Hiển Thị Nút Điều Khiển Mobile",
+	BoldText = true,
+	Default = isMobile,
+	Callback = function(state)
+		mobileControlsEnabled = state
+		MobileControlsGui.Enabled = state and isMobile
+		if not state then resetJoystick() end
+	end
+})
+
+ControlsTab:AddButton({
+	Text = "Reset Vị Trí Joystick",
+	BoldText = true,
+	Callback = function()
+		resetJoystick()
+		Window:Notify("Hệ Thống", "Đã đặt lại Joystick!", 2)
+	end
+})
+
+-- ---------------------------------------------------------
+-- 8. TỰ ĐỘNG ẨN GIAO DIỆN GAME GỐC
+-- ---------------------------------------------------------
 task.spawn(function()
-	local v123 = v7:WaitForChild("PlayerGui");
-	local function v124()
-		for v205, v206 in ipairs(v123:GetChildren()) do
-			if ((v206:IsA("ScreenGui") and not v206.Name:find("Protect") and (v206.Name ~= "PitayaUI")) or (2652 < 196)) then
-				for v236, v237 in ipairs(v206:GetDescendants()) do
-					if v237:IsA("GuiObject") then
-						local v259 = v237.Name:lower();
-						if ((4135 < 4817) and (v259:find("key") or v259:find("bind") or v259:find("pc") or v259:find("control"))) then
-							v237.Visible = false;
-						end
-					end
-				end
-			end
-		end
-	end
-	v124();
-	v123.ChildAdded:Connect(function()
-		task.wait(0.3);
-		v124();
-	end);
-end);
-local function v68(v125)
-	if ((272 == 272) and not v125) then
-		return nil;
-	end
-	if ((100 <= 3123) and v125:IsA("BasePart")) then
-		return v125.Position;
-	elseif v125:IsA("Model") then
-		return (v125.PrimaryPart and v125.PrimaryPart.Position) or v125:GetPivot().Position;
-	end
-	return nil;
+    local pGui = LocalPlayer:WaitForChild("PlayerGui")
+    local function hideGameGuis()
+        for _, gui in ipairs(pGui:GetChildren()) do
+            if gui:IsA("ScreenGui") and not gui.Name:find("Protect") and gui.Name ~= "PitayaUI" then
+                for _, child in ipairs(gui:GetDescendants()) do
+                    if child:IsA("GuiObject") then
+                        local name = child.Name:lower()
+                        if name:find("key") or name:find("bind") or name:find("pc") or name:find("control") then
+                            child.Visible = false
+                        end
+                    end
+                end
+            end
+        end
+    end
+    hideGameGuis()
+    pGui.ChildAdded:Connect(function()
+        task.wait(0.3)
+        hideGameGuis()
+    end)
+end)
+
+-- ---------------------------------------------------------
+-- 9. HÀM HỖ TRỢ GAMEPLAY
+-- ---------------------------------------------------------
+local function getPosition(inst)
+    if not inst then return nil end
+    if inst:IsA("BasePart") then return inst.Position
+    elseif inst:IsA("Model") then 
+        return inst.PrimaryPart and inst.PrimaryPart.Position or inst:GetPivot().Position 
+    end
+    return nil
 end
-local function v69()
-	local v126 = v5:FindFirstChild("Misc");
-	if v126 then
-		local v207 = v126:FindFirstChild("Visuals");
-		if (v207 or (1369 > 4987)) then
-			local v228 = v207:FindFirstChild("ClientBall_MainMatch");
-			if (v228 or (863 >= 4584)) then
-				if v228:IsA("BasePart") then
-					return v228;
-				end
-				if v228:IsA("Model") then
-					return v228.PrimaryPart or v228:FindFirstChildWhichIsA("BasePart") or v228;
-				end
-			end
-			return v207:FindFirstChildWhichIsA("BasePart");
-		end
-	end
-	return nil;
+
+local function getBallPart(ball)
+    if not ball then return nil end
+    if ball:IsA("BasePart") then return ball end
+    if ball:IsA("Model") then
+        return ball.PrimaryPart or ball:FindFirstChildWhichIsA("BasePart") or ball
+    end
+    return nil
 end
-local function v70(v127)
-	if not v127 then
-		return nil;
-	end
-	if v127.Team then
-		return v127.Team.Name;
-	end
-	local v128 = v127:FindFirstChild("leaderstats");
-	if (v128 or (724 >= 1668)) then
-		local v208 = v128:FindFirstChild("Team") or v128:FindFirstChild("Đội");
-		if v208 then
-			return tostring(v208.Value);
-		end
-	end
-	local v129 = v127:FindFirstChild("TeamValue") or v127:FindFirstChild("TeamName");
-	if ((428 < 1804) and v129) then
-		return tostring(v129.Value);
-	end
-	return "NoTeam";
+
+local function getBall()
+    local misc = Workspace:FindFirstChild("Misc")
+    if misc then
+        local visuals = misc:FindFirstChild("Visuals")
+        if visuals then
+            local mainBall = visuals:FindFirstChild("ClientBall_MainMatch")
+            if mainBall then return mainBall end
+            return visuals:FindFirstChildWhichIsA("BasePart")
+        end
+    end
+    return nil
 end
-local function v71()
-	local v130 = v7.Character;
-	if (not v130 or (3325 > 4613)) then
-		return nil;
-	end
-	local v131 = v68(v130:FindFirstChild("HumanoidRootPart"));
-	if (not v131 or (4950 <= 4553)) then
-		return nil;
-	end
-	local v132 = v5:FindFirstChild("Map");
-	if ((2665 <= 3933) and (not v132 or not v132:FindFirstChild("Data"))) then
-		return nil;
-	end
-	local v133 = nil;
-	local v134 = v9.GOAL_DETECTION_DIST;
-	for v190, v191 in ipairs({"Team1","Team2"}) do
-		local v192 = v132.Data:FindFirstChild(v191);
-		if ((3273 == 3273) and v192) then
-			local v222 = v192:FindFirstChild("GoalMesh") or v192:FindFirstChild("Goal") or v192:FindFirstChild("Goalkeeper");
-			if ((3824 > 409) and v222) then
-				local v238 = v68(v222);
-				if v238 then
-					local v260 = (v131 - v238).Magnitude;
-					if ((2087 == 2087) and (v260 < v134)) then
-						v134 = v260;
-						v133 = v222;
-					end
-				end
-			end
-		end
-	end
-	return v133;
+
+-- Hàm kiểm tra xem bóng đã hoàn toàn rời chân của cầu thủ khác hay chưa
+local function isBallFree(ballPos)
+    if not ballPos then return false end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local pRoot = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Right Foot") or plr.Character:FindFirstChild("Left Foot")
+            if pRoot then
+                local dist = (ballPos - pRoot.Position).Magnitude
+                if dist <= CONFIG.OWNER_SAFE_RADIUS then
+                    return false -- Bóng vẫn đang ở chân người chơi khác
+                end
+            end
+        end
+    end
+    return true
 end
-local function v72(v135, v136, v137, v138, v139)
-	if v16 then
-		return;
-	end
-	v16 = true;
-	task.spawn(function()
-		local v193 = v7.Character;
-		local v194 = v193 and v193:FindFirstChild("HumanoidRootPart");
-		if v194 then
-			v194.CFrame = CFrame.new(v194.Position, Vector3.new(v135.X, v194.Position.Y, v135.Z));
-		end
-		if (v139 or (3404 > 4503)) then
-			if (v138 or (3506 <= 1309)) then
-				v3:SendKeyEvent(true, Enum.KeyCode.Space, false, game);
-				task.wait(0.03);
-				v3:SendKeyEvent(false, Enum.KeyCode.Space, false, game);
-			end
-			v3:SendMouseButtonEvent(0, 0, 0, true, game, 0);
-			task.wait(0.05);
-			v3:SendMouseButtonEvent(0, 0, 0, false, game, 0);
-			task.wait(0.4);
-			v16 = false;
-			return;
-		end
-		if ((2955 == 2955) and v138) then
-			v3:SendKeyEvent(true, Enum.KeyCode.Space, false, game);
-			task.wait(0.03);
-			v3:SendKeyEvent(false, Enum.KeyCode.Space, false, game);
-			task.wait(0.03);
-		end
-		local v195 = nil;
-		if (v136 or (2903 == 1495)) then
-			v195 = Enum.KeyCode.A;
-		elseif v137 then
-			v195 = Enum.KeyCode.D;
-		end
-		if v195 then
-			v3:SendKeyEvent(true, v195, false, game);
-			task.wait(0.02);
-		end
-		v3:SendMouseButtonEvent(0, 0, 1, true, game, 0);
-		task.wait(0.05);
-		v3:SendMouseButtonEvent(0, 0, 1, false, game, 0);
-		if ((4546 >= 2275) and v195) then
-			task.wait(0.03);
-			v3:SendKeyEvent(false, v195, false, game);
-		end
-		task.wait(v9.COOLDOWN);
-		v16 = false;
-	end);
+
+-- Hàm tự động kéo/hút bóng về phía người chơi
+local function pullBallToSelf(ballInst, targetPos, dt)
+    local ballPart = getBallPart(ballInst)
+    if not ballPart then return end
+
+    if ballPart:IsA("BasePart") then
+        local currentPos = ballPart.Position
+        local dir = (targetPos - currentPos)
+        local dist = dir.Magnitude
+        
+        if dist > 0.5 then
+            local pullVelocity = dir.Unit * math.min(dist * 25, CONFIG.MAGNET_PULL_SPEED)
+            ballPart.AssemblyLinearVelocity = pullVelocity
+        end
+    end
 end
-local function v73(v140)
-	local v141 = Instance.new("BillboardGui");
-	v141.Name = "CleanPlayerESP";
-	v141.AlwaysOnTop = true;
-	v141.Size = UDim2.new(0, 100, 0, 24);
-	v141.ExtentsOffset = Vector3.new(0, 2.5, 0);
-	local v146 = Instance.new("TextLabel");
-	v146.Name = "ESPLabel";
-	v146.Size = UDim2.new(1, 0, 1, 0);
-	v146.BackgroundTransparency = 1;
-	v146.Text = v140.DisplayName .. "\n[0m]";
-	v146.TextColor3 = Color3.fromRGB(255, 255, 255);
-	v146.Font = Enum.Font.GothamBold;
-	v146.TextSize = 10;
-	v146.TextStrokeTransparency = 0.2;
-	v146.TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
-	v146.Parent = v141;
-	return v141;
+
+local function getPlayerTeam(player)
+    if not player then return nil end
+    if player.Team then return player.Team.Name end
+    
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if leaderstats then
+        local teamVal = leaderstats:FindFirstChild("Team") or leaderstats:FindFirstChild("Đội")
+        if teamVal then return tostring(teamVal.Value) end
+    end
+    
+    local customTeam = player:FindFirstChild("TeamValue") or player:FindFirstChild("TeamName")
+    if customTeam then return tostring(customTeam.Value) end
+
+    return "NoTeam"
 end
-local function v74()
-	local v158 = Instance.new("BillboardGui");
-	v158.Name = "CleanBallESP";
-	v158.AlwaysOnTop = true;
-	v158.Size = UDim2.new(0, 80, 0, 20);
-	v158.ExtentsOffset = Vector3.new(0, 1.8, 0);
-	local v163 = Instance.new("TextLabel");
-	v163.Name = "BallLabel";
-	v163.Size = UDim2.new(1, 0, 1, 0);
-	v163.BackgroundTransparency = 1;
-	v163.Text = "⚽ BÓNG [0m]";
-	v163.TextColor3 = Color3.fromRGB(255, 220, 50);
-	v163.Font = Enum.Font.GothamBold;
-	v163.TextSize = 11;
-	v163.TextStrokeTransparency = 0.2;
-	v163.TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
-	v163.Parent = v158;
-	return v158;
+
+local function getDefendingGoal()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    local hrpPos = getPosition(char:FindFirstChild("HumanoidRootPart"))
+    if not hrpPos then return nil end
+    local map = Workspace:FindFirstChild("Map")
+    if not map or not map:FindFirstChild("Data") then return nil end
+    
+    local closestGoal = nil
+    local shortestDist = CONFIG.GOAL_DETECTION_DIST
+    for _, teamName in ipairs({"Team1", "Team2"}) do
+        local teamFolder = map.Data:FindFirstChild(teamName)
+        if teamFolder then
+            local goalObj = teamFolder:FindFirstChild("GoalMesh") or teamFolder:FindFirstChild("Goal") or teamFolder:FindFirstChild("Goalkeeper")
+            if goalObj then
+                local gPos = getPosition(goalObj)
+                if gPos then
+                    local dist = (hrpPos - gPos).Magnitude
+                    if dist < shortestDist then
+                        shortestDist = dist
+                        closestGoal = goalObj
+                    end
+                end
+            end
+        end
+    end
+    return closestGoal
 end
-v2.Heartbeat:Connect(function()
-	local v175 = v7.Character;
-	local v176 = v175 and v175:FindFirstChild("HumanoidRootPart");
-	local v177 = v69();
-	if ((819 >= 22) and v177 and v14) then
-		local v209 = (v177:IsA("Model") and (v177.PrimaryPart or v177:FindFirstChildWhichIsA("BasePart"))) or v177;
-		if ((3162 == 3162) and v209) then
-			local v229 = v209:FindFirstChild("CleanBallESP") or v74();
-			v229.Parent = v209;
-			local v231 = v209:FindFirstChild("BallHighlight");
-			if (not v231 or (2369 > 4429)) then
-				v231 = Instance.new("Highlight");
-				v231.Name = "BallHighlight";
-				v231.FillColor = Color3.fromRGB(255, 200, 0);
-				v231.OutlineColor = Color3.fromRGB(255, 255, 255);
-				v231.FillTransparency = 0.4;
-				v231.Parent = v209;
-			end
-			if v176 then
-				local v254 = math.floor((v209.Position - v176.Position).Magnitude / 3);
-				v229.BallLabel.Text = "⚽ BÓNG [" .. tostring(v254) .. "m]";
-			end
-		end
-	elseif ((4095 >= 3183) and v177) then
-		local v232 = (v177:IsA("Model") and (v177.PrimaryPart or v177:FindFirstChildWhichIsA("BasePart"))) or v177;
-		if v232 then
-			if v232:FindFirstChild("CleanBallESP") then
-				v232.CleanBallESP:Destroy();
-			end
-			if (v232:FindFirstChild("BallHighlight") or (3711 < 1008)) then
-				v232.BallHighlight:Destroy();
-			end
-		end
-	end
-	local v178 = v70(v7);
-	for v196, v197 in ipairs(v1:GetPlayers()) do
-		if ((v197 ~= v7) and v197.Character and v197.Character:FindFirstChild("HumanoidRootPart")) then
-			local v225 = v197.Character;
-			local v226 = v225.HumanoidRootPart;
-			if (v15 or (1049 <= 906)) then
-				local v240 = v226:FindFirstChild("CleanPlayerESP") or v73(v197);
-				v240.Parent = v226;
-				local v242 = v70(v197);
-				local v243 = (v178 ~= "NoTeam") and (v242 ~= "NoTeam") and (v178 == v242);
-				local v244 = (v243 and Color3.fromRGB(50, 180, 255)) or Color3.fromRGB(255, 50, 50);
-				v240.ESPLabel.TextColor3 = v244;
-				local v246 = v225:FindFirstChild("TeamCircle");
-				if not v246 then
-					v246 = Instance.new("Highlight");
-					v246.Name = "TeamCircle";
-					v246.FillTransparency = 0.6;
-					v246.OutlineTransparency = 0.2;
-					v246.Parent = v225;
-				end
-				v246.FillColor = v244;
-				v246.OutlineColor = v244;
-				if v176 then
-					local v265 = math.floor((v226.Position - v176.Position).Magnitude / 3);
-					v240.ESPLabel.Text = v197.DisplayName .. "\n[" .. tostring(v265) .. "m]";
-				end
-			else
-				if ((4513 > 2726) and v226:FindFirstChild("CleanPlayerESP")) then
-					v226.CleanPlayerESP:Destroy();
-				end
-				if v225:FindFirstChild("TeamCircle") then
-					v225.TeamCircle:Destroy();
-				end
-			end
-		end
-	end
-end);
-v2.RenderStepped:Connect(function(v179)
-	local v180 = v7.Character;
-	local v181 = v180 and v180:FindFirstChildOfClass("Humanoid");
-	local v182 = v180 and v180:FindFirstChild("HumanoidRootPart");
-	if (v21 and v13 and v32 and (v31.Magnitude > 0.05) and v181) then
-		local v210 = v8.CFrame;
-		local v211 = Vector3.new(v210.LookVector.X, 0, v210.LookVector.Z).Unit;
-		local v212 = Vector3.new(v210.RightVector.X, 0, v210.RightVector.Z).Unit;
-		local v213 = (v212 * v31.X) + (v211 * -v31.Y);
-		v181:Move(v213, false);
-	end
-	local v183 = v69();
-	local v184 = v68(v183);
-	local v185 = tick();
-	if ((v184 and v18) or (1481 >= 2658)) then
-		local v214 = v185 - v19;
-		if (v214 > 0) then
-			v20 = (v184 - v18) / v214;
-		end
-	end
-	v18 = v184;
-	v19 = v185;
-	if ((v11 and v184) or (3220 == 1364)) then
-		v8.CFrame = CFrame.new(v8.CFrame.Position, v184);
-	end
-	if (not v182 or not v181 or (1054 > 3392)) then
-		return;
-	end
-	local v186 = v71();
-	local v187 = v186 and v68(v186);
-	if ((v12 and v184 and v187 and not v32 and not v16) or (676 >= 1642)) then
-		local v216 = (v184 - v187).Magnitude;
-		if (v216 <= v9.POSITIONING_DIST) then
-			local v233 = v187 + ((v184 - v187).Unit * 6);
-			local v234 = v233 - v182.Position;
-			if (v234.Magnitude > 1.2) then
-				v181:Move(v234.Unit, false);
-			end
-		end
-	end
-	if ((4136 > 2397) and v10 and v184 and v187 and not v16) then
-		local v217 = v20.Magnitude;
-		if ((v217 >= v9.MIN_BALL_SPEED) or (4334 == 4245)) then
-			local v235 = (v187 - v184).Unit;
-			if ((v20.Unit:Dot(v235) > 0.15) or (4276 <= 3031)) then
-				local v256 = v9.PREDICTION_TIME;
-				local v257 = v184 + (v20 * v256) + Vector3.new(0, -0.5 * v9.GRAVITY * (v256 ^ 2), 0);
-				local v258 = (v257 - v187).Magnitude;
-				if ((v258 <= v9.BALL_SAVE_DIST) or (4782 <= 1199)) then
-					local v267 = v182.CFrame;
-					local v268 = v267:PointToObjectSpace(v257);
-					local v269 = (v257 - v182.Position).Magnitude;
-					if ((v269 <= v9.CATCH_RADIUS) or (4864 < 1902)) then
-						local v271 = v268.Y > v9.HIGH_SHOT_THRESHOLD;
-						v72(v257, false, false, v271, true);
-					else
-						local v272 = v268.X < -v9.LEFT_RIGHT_THRESHOLD;
-						local v273 = v268.X > v9.LEFT_RIGHT_THRESHOLD;
-						local v274 = v268.Y > v9.HIGH_SHOT_THRESHOLD;
-						if ((4839 >= 3700) and (v272 or v273 or v274)) then
-							v72(v257, v272, v273, v274, false);
-						end
-					end
-				end
-			end
-		end
-	end
-end);
+
+-- Xử lý đứng bắt hoặc bay người chính xác hướng
+local function performSmartDive(predictedPos, isLeft, isRight, isHigh, isStandCatch)
+    if isDiving then return end
+    isDiving = true
+    task.spawn(function()
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if hrp then
+            -- Quay mặt về hướng điểm rơi của bóng
+            hrp.CFrame = CFrame.new(hrp.Position, Vector3.new(predictedPos.X, hrp.Position.Y, predictedPos.Z))
+        end
+
+        -- Trường hợp 1: Bóng rơi ngay vị trí đứng bắt (Chỉ cần click chuột / tương tác)
+        if isStandCatch then
+            if isHigh then
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+                task.wait(0.03)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+            end
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+            task.wait(0.05)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+            task.wait(0.4)
+            isDiving = false
+            return
+        end
+
+        -- Trường hợp 2: Phải Bay người cứu thua
+        if isHigh then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+            task.wait(0.03)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+            task.wait(0.03)
+        end
+
+        local dirKey = nil
+        if isLeft then dirKey = Enum.KeyCode.A
+        elseif isRight then dirKey = Enum.KeyCode.D end
+
+        if dirKey then
+            VirtualInputManager:SendKeyEvent(true, dirKey, false, game)
+            task.wait(0.02)
+        end
+        
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 1, true, game, 0)
+        task.wait(0.05)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 1, false, game, 0)
+        
+        if dirKey then
+            task.wait(0.03)
+            VirtualInputManager:SendKeyEvent(false, dirKey, false, game)
+        end
+        
+        task.wait(CONFIG.COOLDOWN)
+        isDiving = false
+    end)
+end
+
+-- ---------------------------------------------------------
+-- 10. ESP MINIMALIST
+-- ---------------------------------------------------------
+local function createCleanPlayerESP(player)
+    local bg = Instance.new("BillboardGui")
+    bg.Name = "CleanPlayerESP"
+    bg.AlwaysOnTop = true
+    bg.Size = UDim2.new(0, 100, 0, 24)
+    bg.ExtentsOffset = Vector3.new(0, 2.5, 0)
+
+    local txt = Instance.new("TextLabel")
+    txt.Name = "ESPLabel"
+    txt.Size = UDim2.new(1, 0, 1, 0)
+    txt.BackgroundTransparency = 1
+    txt.Text = player.DisplayName .. "\n[0m]"
+    txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 10
+    txt.TextStrokeTransparency = 0.2
+    txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    txt.Parent = bg
+
+    return bg
+end
+
+local function createCleanBallESP()
+    local bg = Instance.new("BillboardGui")
+    bg.Name = "CleanBallESP"
+    bg.AlwaysOnTop = true
+    bg.Size = UDim2.new(0, 80, 0, 20)
+    bg.ExtentsOffset = Vector3.new(0, 1.8, 0)
+
+    local txt = Instance.new("TextLabel")
+    txt.Name = "BallLabel"
+    txt.Size = UDim2.new(1, 0, 1, 0)
+    txt.BackgroundTransparency = 1
+    txt.Text = "⚽ BÓNG [0m]"
+    txt.TextColor3 = Color3.fromRGB(255, 220, 50)
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 11
+    txt.TextStrokeTransparency = 0.2
+    txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    txt.Parent = bg
+
+    return bg
+end
+
+RunService.Heartbeat:Connect(function()
+    local myChar = LocalPlayer.Character
+    local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
+    local ball = getBall()
+    if ball and espBallEnabled then
+        local ballTargetPart = getBallPart(ball)
+        if ballTargetPart then
+            local ballGui = ballTargetPart:FindFirstChild("CleanBallESP") or createCleanBallESP()
+            ballGui.Parent = ballTargetPart
+
+            local highlight = ballTargetPart:FindFirstChild("BallHighlight")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "BallHighlight"
+                highlight.FillColor = Color3.fromRGB(255, 200, 0)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.4
+                highlight.Parent = ballTargetPart
+            end
+
+            if myHrp then
+                local dist = math.floor((ballTargetPart.Position - myHrp.Position).Magnitude / 3)
+                ballGui.BallLabel.Text = "⚽ BÓNG [" .. tostring(dist) .. "m]"
+            end
+        end
+    else
+        if ball then
+            local ballTargetPart = getBallPart(ball)
+            if ballTargetPart then
+                if ballTargetPart:FindFirstChild("CleanBallESP") then ballTargetPart.CleanBallESP:Destroy() end
+                if ballTargetPart:FindFirstChild("BallHighlight") then ballTargetPart.BallHighlight:Destroy() end
+            end
+        end
+    end
+
+    local myTeam = getPlayerTeam(LocalPlayer)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local pChar = plr.Character
+            local pHrp = pChar.HumanoidRootPart
+
+            if espPlayersEnabled then
+                local pGui = pHrp:FindFirstChild("CleanPlayerESP") or createCleanPlayerESP(plr)
+                pGui.Parent = pHrp
+
+                local plrTeam = getPlayerTeam(plr)
+                local isTeammate = (myTeam ~= "NoTeam" and plrTeam ~= "NoTeam") and (myTeam == plrTeam)
+                local teamColor = isTeammate and Color3.fromRGB(50, 180, 255) or Color3.fromRGB(255, 50, 50)
+                pGui.ESPLabel.TextColor3 = teamColor
+
+                local circle = pChar:FindFirstChild("TeamCircle")
+                if not circle then
+                    circle = Instance.new("Highlight")
+                    circle.Name = "TeamCircle"
+                    circle.FillTransparency = 0.6
+                    circle.OutlineTransparency = 0.2
+                    circle.Parent = pChar
+                end
+                circle.FillColor = teamColor
+                circle.OutlineColor = teamColor
+
+                if myHrp then
+                    local dist = math.floor((pHrp.Position - myHrp.Position).Magnitude / 3)
+                    pGui.ESPLabel.Text = plr.DisplayName .. "\n[" .. tostring(dist) .. "m]"
+                end
+            else
+                if pHrp:FindFirstChild("CleanPlayerESP") then pHrp.CleanPlayerESP:Destroy() end
+                if pChar:FindFirstChild("TeamCircle") then pChar.TeamCircle:Destroy() end
+            end
+        end
+    end
+end)
+
+-- ---------------------------------------------------------
+-- 11. VÒNG LẶP RENDER STEPPED (TÍCH HỢP HÚT BÓNG TỰ ĐỘNG)
+-- ---------------------------------------------------------
+RunService.RenderStepped:Connect(function(dt)
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+    -- Di chuyển bằng Joystick
+    if isMobile and mobileControlsEnabled and joystickTouchObject and moveVector.Magnitude > 0.05 and hum then
+        local camCFrame = Camera.CFrame
+        local forward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z).Unit
+        local right = Vector3.new(camCFrame.RightVector.X, 0, camCFrame.RightVector.Z).Unit
+        local moveDirection = (right * moveVector.X) + (forward * (-moveVector.Y))
+        hum:Move(moveDirection, false)
+    end
+
+    -- Tính toán vận tốc bóng chính xác
+    local ball = getBall()
+    local ballPos = getPosition(ball)
+    local now = tick()
+    
+    if ballPos and lastBallPos then
+        local timeDiff = now - lastBallTime
+        if timeDiff > 0 then
+            ballVelocity = (ballPos - lastBallPos) / timeDiff
+        end
+    end
+    lastBallPos = ballPos
+    lastBallTime = now
+
+    if cameraTrackEnabled and ballPos then
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, ballPos)
+    end
+
+    if not hrp or not hum then return end
+
+    local goal = getDefendingGoal()
+    local goalPos = goal and getPosition(goal)
+
+    -- Auto Positioning
+    if autoPositionEnabled and ballPos and goalPos and not joystickTouchObject and not isDiving then
+        local distBallToGoal = (ballPos - goalPos).Magnitude
+        if distBallToGoal <= CONFIG.POSITIONING_DIST then
+            local targetPos = goalPos + (ballPos - goalPos).Unit * 6
+            local moveDir = (targetPos - hrp.Position)
+            if moveDir.Magnitude > 1.2 then
+                hum:Move(moveDir.Unit, false)
+            end
+        end
+    end
+
+    -- LOGIC AUTO SAVE + AUTOMATIC MAGNET (HÚT BÓNG CHÍNH XÁC)
+    if autoSaveEnabled and ballPos and goalPos then
+        local ballSpeed = ballVelocity.Magnitude
+
+        if ballSpeed >= CONFIG.MIN_BALL_SPEED then
+            local ballToGoalDir = (goalPos - ballPos).Unit
+            
+            -- Tích vô hướng kiểm tra bóng có đang tiến về khung thành hay không
+            if ballVelocity.Unit:Dot(ballToGoalDir) > 0.15 then
+                local t = CONFIG.PREDICTION_TIME
+                
+                -- Tính điểm rơi dự đoán theo đường Parabola
+                local predictedBallPos = ballPos + (ballVelocity * t) + Vector3.new(0, -0.5 * CONFIG.GRAVITY * (t ^ 2), 0)
+                
+                local distToGoal = (predictedBallPos - goalPos).Magnitude
+                
+                -- KIỂM TRA ĐIỀU KIỆN NGUY HIỂM VÀ BÓNG RỜI CHÂN NGƯỜI CHƠI KHÁC
+                if distToGoal <= CONFIG.BALL_SAVE_DIST and isBallFree(ballPos) then
+                    
+                    -- TỰ ĐỘNG HÚT BÓNG VỀ HƯỚNG BẢN THÂN KHI RƠI VÀO VÙNG NGUY HIỂM
+                    if autoMagnetEnabled then
+                        local catchTarget = hrp.Position + (hrp.CFrame.LookVector * 1.5) + Vector3.new(0, 0.5, 0)
+                        pullBallToSelf(ball, catchTarget, dt)
+                    end
+
+                    if not isDiving then
+                        local currentHrpCFrame = hrp.CFrame
+                        local relPos = currentHrpCFrame:PointToObjectSpace(predictedBallPos)
+                        local totalDistToKeeper = (predictedBallPos - hrp.Position).Magnitude
+
+                        -- TH1: Bóng sát người -> ĐỨNG BẮT BÓNG (Không bay)
+                        if totalDistToKeeper <= CONFIG.CATCH_RADIUS then
+                            local isHigh = relPos.Y > CONFIG.HIGH_SHOT_THRESHOLD
+                            performSmartDive(predictedBallPos, false, false, isHigh, true)
+                        
+                        -- TH2: Bóng ở xa -> BAY NGƯỜI CỨU THUA (Hút bóng sẽ triệt tiêu bay lệch hướng)
+                        else
+                            local isLeft = relPos.X < -CONFIG.LEFT_RIGHT_THRESHOLD
+                            local isRight = relPos.X > CONFIG.LEFT_RIGHT_THRESHOLD
+                            local isHigh = relPos.Y > CONFIG.HIGH_SHOT_THRESHOLD
+
+                            if isLeft or isRight or isHigh then
+                                performSmartDive(predictedBallPos, isLeft, isRight, isHigh, false)
+                            end
+                        end
+                    end
+
+                end
+            end
+        end
+    end
+end)
