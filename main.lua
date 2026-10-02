@@ -1,9 +1,11 @@
 -- =================================================================
 -- SMART GK AUTO SAVE + MAGNET BALL SYSTEM - FIX BÓNG & BAY NGƯỜI
+-- (ĐÃ CHUYỂN SANG GIAO DIỆN NOVA UI)
 -- =================================================================
 
--- 1. LOAD THƯ VIỆN PITAYA UI
-local PitayaUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pitaya-real/PitayaUI/refs/heads/main/Pitayauisource.lua"))()
+-- 1. LOAD THƯ VIỆN NOVA UI
+local rawUrl = "https://raw.githubusercontent.com/Pitaya-real/PitayaUI/refs/heads/main/NovaUI.lua"
+local NovaUI = loadstring(game:HttpGet(rawUrl))()
 
 -- 2. KHỞI TẠO CÁC SERVICE ROBLOX
 local Players = game:GetService("Players")
@@ -57,15 +59,17 @@ local ballVelocity = Vector3.zero
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 -- ---------------------------------------------------------
--- 4. KHỞI TẠO CỬA SỔ CHÍNH (PITAYA UI WINDOW)
+-- 4. KHỞI TẠO CỬA SỔ CHÍNH (NOVA UI WINDOW)
 -- ---------------------------------------------------------
-local Window = PitayaUI:CreateWindow({
-	Title = "Smart GK System | PITAYA HUB",
-	Logo = "rbxassetid://73866843639743",
-	Theme = "PitayaUI",
-	Font = "Gotham",
-	Loading = true,
-	LoadingTitle = "<b>Smart GK BETA</b> PITAYA REAL"
+local Window = NovaUI:CreateWindow({
+	Title = "Smart GK System",
+	SubTitle = "PITAYA REAL | BETA",
+	Logo = "73866843639743",
+	FloatingIcon = "73866843639743",
+	Size = UDim2.fromOffset(620, 420),
+	Accent = Color3.fromRGB(167, 139, 250),
+	MinimizeKey = Enum.KeyCode.RightControl,
+	Acrylic = true,
 })
 
 -- ---------------------------------------------------------
@@ -259,99 +263,124 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 -- ---------------------------------------------------------
--- 7. PITAYA UI TABS
+-- 7. NOVA UI TABS
 -- ---------------------------------------------------------
-local GKTab = Window:CreateTab("Smart GK", "⚽")
+local Tabs = {
+    GK       = Window:AddTab({ Title = "Smart GK", Icon = "⚽" }),
+    Visual   = Window:AddTab({ Title = "Hiển Thị", Icon = "👁️" }),
+    Controls = Window:AddTab({ Title = "Điều Khiển", Icon = "🎮" }),
+}
 
-GKTab:AddLabel("--- Tự Động Thủ Môn ---", {BoldText = true})
+local Options = NovaUI.Options
 
-GKTab:AddToggle({
-	Text = "Tự Động Bắt Bóng (Auto Save)",
-	BoldText = true,
+-- TAB 1: SMART GK
+Tabs.GK:AddSection("Tự Động Thủ Môn")
+
+Tabs.GK:AddToggle("AutoSave", {
+	Title = "Tự Động Bắt Bóng (Auto Save)",
 	Default = false,
-	Callback = function(state)
-		autoSaveEnabled = state
-		Window:Notify("Smart GK", "Auto Save: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
-	end
 })
+Options.AutoSave:OnChanged(function(state)
+	autoSaveEnabled = state
+	NovaUI:Notify({
+		Title = "Smart GK",
+		Content = "Auto Save: " .. (state and "ĐÃ BẬT" or "ĐÃ TẮT"),
+		Duration = 2
+	})
+end)
 
-GKTab:AddToggle({
-	Text = "Tự Động Hút Bóng Nguy Hiểm (Magnet)",
-	BoldText = true,
+Tabs.GK:AddToggle("AutoMagnet", {
+	Title = "Tự Động Hút Bóng Nguy Hiểm (Magnet)",
 	Default = true,
-	Callback = function(state)
-		autoMagnetEnabled = state
-		Window:Notify("Smart GK", "Hút Bóng: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
-	end
 })
+Options.AutoMagnet:OnChanged(function(state)
+	autoMagnetEnabled = state
+	NovaUI:Notify({
+		Title = "Smart GK",
+		Content = "Hút Bóng: " .. (state and "ĐÃ BẬT" or "ĐÃ TẮT"),
+		Duration = 2
+	})
+end)
 
-GKTab:AddToggle({
-	Text = "Tự Động Khép Góc Khung Thành",
-	BoldText = true,
+Tabs.GK:AddToggle("AutoPosition", {
+	Title = "Tự Động Khép Góc Khung Thành",
 	Default = false,
-	Callback = function(state)
-		autoPositionEnabled = state
-		Window:Notify("Smart GK", "Tự Khép Góc: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
-	end
 })
+Options.AutoPosition:OnChanged(function(state)
+	autoPositionEnabled = state
+	NovaUI:Notify({
+		Title = "Smart GK",
+		Content = "Tự Khép Góc: " .. (state and "ĐÃ BẬT" or "ĐÃ TẮT"),
+		Duration = 2
+	})
+end)
 
-GKTab:AddToggle({
-	Text = "Khóa Camera Vào Bóng (Cam Lock)",
-	BoldText = true,
+Tabs.GK:AddToggle("CameraTrack", {
+	Title = "Khóa Camera Vào Bóng (Cam Lock)",
 	Default = false,
-	Callback = function(state)
-		cameraTrackEnabled = state
-		Window:Notify("Smart GK", "Cam Lock: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
-	end
 })
+Options.CameraTrack:OnChanged(function(state)
+	cameraTrackEnabled = state
+	NovaUI:Notify({
+		Title = "Smart GK",
+		Content = "Cam Lock: " .. (state and "ĐÃ BẬT" or "ĐÃ TẮT"),
+		Duration = 2
+	})
+end)
 
-local VisualTab = Window:CreateTab("Hiển Thị", "👁️")
+-- TAB 2: HIỂN THỊ
+Tabs.Visual:AddSection("ESP Tinh Gọn (Minimalist)")
 
-VisualTab:AddLabel("--- ESP Tinh Gọn (Minimalist) ---", {BoldText = true})
-
-VisualTab:AddToggle({
-	Text = "ESP Trái Bóng (Mini Ball Marker)",
-	BoldText = true,
+Tabs.Visual:AddToggle("EspBall", {
+	Title = "ESP Trái Bóng (Mini Ball Marker)",
 	Default = false,
-	Callback = function(state)
-		espBallEnabled = state
-		Window:Notify("ESP", "ESP Bóng: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
-	end
 })
+Options.EspBall:OnChanged(function(state)
+	espBallEnabled = state
+	NovaUI:Notify({
+		Title = "ESP",
+		Content = "ESP Bóng: " .. (state and "ĐÃ BẬT" or "ĐÃ TẮT"),
+		Duration = 2
+	})
+end)
 
-VisualTab:AddToggle({
-	Text = "ESP Cầu Thủ (Leaderboard Team ESP)",
-	BoldText = true,
+Tabs.Visual:AddToggle("EspPlayers", {
+	Title = "ESP Cầu Thủ (Leaderboard Team ESP)",
 	Default = false,
-	Callback = function(state)
-		espPlayersEnabled = state
-		Window:Notify("ESP", "ESP Cầu Thủ: " .. (state and "<b>ĐÃ BẬT</b>" or "<b>ĐÃ TẮT</b>"), 2)
-	end
 })
+Options.EspPlayers:OnChanged(function(state)
+	espPlayersEnabled = state
+	NovaUI:Notify({
+		Title = "ESP",
+		Content = "ESP Cầu Thủ: " .. (state and "ĐÃ BẬT" or "ĐÃ TẮT"),
+		Duration = 2
+	})
+end)
 
-local ControlsTab = Window:CreateTab("Điều Khiển", "🎮")
+-- TAB 3: ĐIỀU KHIỂN
+Tabs.Controls:AddSection("Phím Tắt Ảo Mobile")
 
-ControlsTab:AddLabel("--- Phím Tắt Ảo Mobile ---", {BoldText = true})
-
-ControlsTab:AddToggle({
-	Text = "Hiển Thị Nút Điều Khiển Mobile",
-	BoldText = true,
+Tabs.Controls:AddToggle("MobileControls", {
+	Title = "Hiển Thị Nút Điều Khiển Mobile",
 	Default = isMobile,
-	Callback = function(state)
-		mobileControlsEnabled = state
-		MobileControlsGui.Enabled = state and isMobile
-		if not state then resetJoystick() end
-	end
 })
+Options.MobileControls:OnChanged(function(state)
+	mobileControlsEnabled = state
+	MobileControlsGui.Enabled = state and isMobile
+	if not state then resetJoystick() end
+end)
 
-ControlsTab:AddButton({
-	Text = "Reset Vị Trí Joystick",
-	BoldText = true,
+Tabs.Controls:AddButton({
+	Title = "Reset Vị Trí Joystick",
+	ButtonText = "Reset",
 	Callback = function()
 		resetJoystick()
-		Window:Notify("Hệ Thống", "Đã đặt lại Joystick!", 2)
-	end
+		NovaUI:Notify({ Title = "Hệ Thống", Content = "Đã đặt lại Joystick!", Duration = 2 })
+	end,
 })
+
+-- Chọn tab mặc định khi mở menu
+Window:SelectTab(1)
 
 -- ---------------------------------------------------------
 -- 8. TỰ ĐỘNG ẨN GIAO DIỆN GAME GỐC
@@ -360,7 +389,7 @@ task.spawn(function()
     local pGui = LocalPlayer:WaitForChild("PlayerGui")
     local function hideGameGuis()
         for _, gui in ipairs(pGui:GetChildren()) do
-            if gui:IsA("ScreenGui") and not gui.Name:find("Protect") and gui.Name ~= "PitayaUI" then
+            if gui:IsA("ScreenGui") and not gui.Name:find("Protect") and gui.Name ~= "NovaUI" then
                 for _, child in ipairs(gui:GetDescendants()) do
                     if child:IsA("GuiObject") then
                         local name = child.Name:lower()
